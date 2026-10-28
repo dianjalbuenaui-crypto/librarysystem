@@ -1,5 +1,6 @@
 {% extends '_app_layout.html' %}
-{% from '_macros.html' import badge, icon, sort_select, status_rank %}
+{% from '_items.html' import history_row %}
+{% from '_macros.html' import icon, sort_select %}
 {% block title %}My dashboard{% endblock %}
 {% block content %}
 {% if notices %}
@@ -21,12 +22,7 @@
   <a class="btn btn-soft" href="{{ url_for('user_catalog') }}" data-skeleton="catalog">{{ icon('search') }}Browse books</a>
 </div>
 
-<section class="stats" aria-label="Your borrowing">
-  <div class="stat"><span class="stat-label">Currently borrowed</span><span class="stat-number">{{ stats.borrowed }}</span></div>
-  <div class="stat"><span class="stat-label">Pending requests</span><span class="stat-number">{{ stats.pending }}</span></div>
-  <div class="stat"><span class="stat-label">Books returned</span><span class="stat-number">{{ stats.returned }}</span></div>
-  <div class="stat stat-accent"><span class="stat-label">Next due date</span><span class="stat-number stat-date">{{ stats.next_due|fmt }}</span></div>
-</section>
+{{ page.block('user-stats') }}
 
 <section class="card">
   <div class="card-head"><h2>Borrowing history</h2><p class="list-count" data-list-count="history" aria-live="polite"></p></div>
@@ -41,7 +37,7 @@
       ('title:asc:text', 'Book A–Z'),
     ], request.args.get('sort')) }}
   </form>
-  <div class="table-wrap"><table class="table table-cards" id="history" data-list data-noun-one="book" data-noun-many="books">
+  <div class="table-wrap"><table class="table table-cards" id="history" data-live-hash="{{ page.list_hash('history') }}" data-list data-noun-one="book" data-noun-many="books">
     <thead><tr>
       <th data-sort-key="title">Book</th>
       <th data-sort-key="borrowed" data-sort-type="date">Borrowed on</th>
@@ -51,17 +47,9 @@
     </tr></thead>
     <tbody>
       {% for h in history %}
-      <tr data-item data-search="{{ h.search }}" data-title="{{ h.title }}" data-requested="{{ h.requested_at or '' }}" data-borrowed="{{ h.borrowed_at or '' }}"
-          data-due="{{ h.due_date or '' }}" data-returned="{{ h.returned_at or '' }}" data-status="{{ status_rank(h.status, h.due_date, today) }}"{% if not h.visible %} hidden{% endif %}>
-        <td data-label="Book" class="cell-title">{{ h.title }}</td>
-        <td data-label="Borrowed on">{{ h.borrowed_at|fmt }}</td>
-        <td data-label="Due date">{{ h.due_date|fmt }}</td>
-        <td data-label="Returned on">{{ h.returned_at|fmt }}</td>
-        <td data-label="Status">{{ badge(h.status, h.due_date, today) }}</td>
-      </tr>
-      {% else %}
-      <tr class="empty-row"><td colspan="5">You have not borrowed any books yet. <a href="{{ url_for('user_catalog') }}" data-skeleton="catalog">Browse the catalog</a></td></tr>
+      {{ history_row(h, today) }}
       {% endfor %}
+      <tr class="empty-row" data-list-placeholder{% if history %} hidden{% endif %}><td colspan="5">You have not borrowed any books yet. <a href="{{ url_for('user_catalog') }}" data-skeleton="catalog">Browse the catalog</a></td></tr>
     </tbody>
   </table></div>
   <p class="empty" data-list-empty="history"{% if not history or history|selectattr('visible')|list %} hidden{% endif %}>None of your books match your search.</p>

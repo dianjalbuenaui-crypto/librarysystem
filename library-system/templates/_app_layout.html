@@ -31,7 +31,7 @@
       <span class="brand"><span class="brand-dot" aria-hidden="true"></span>Library System</span>
       <nav class="side-nav" aria-label="Main">
         {% for endpoint, label, short, ic in nav %}
-        <a href="{{ url_for(endpoint) }}" data-skeleton="{{ skeletons[endpoint] }}"{% if request.endpoint == endpoint %} class="active" aria-current="page"{% endif %}>{{ icon(ic) }}{{ label }}{% if endpoint == 'admin_requests' %}<span class="nav-badge" data-live-badge hidden></span>{% endif %}</a>
+        <a href="{{ url_for(endpoint) }}" data-skeleton="{{ skeletons[endpoint] }}"{% if request.endpoint == endpoint %} class="active" aria-current="page"{% endif %}>{{ icon(ic) }}{{ label }}{% if endpoint == 'admin_requests' %}{% set waiting = page.values.pending|length if page is defined and page.values.pending is defined else 0 %}<span class="nav-badge" data-live-badge aria-label="{{ waiting }} waiting"{% if not waiting %} hidden{% endif %}>{{ waiting }}</span>{% endif %}</a>
         {% endfor %}
       </nav>
       <div class="side-foot">
@@ -62,7 +62,7 @@
 
     <nav class="tabbar" aria-label="Main">
       {% for endpoint, label, short, ic in nav %}
-      <a href="{{ url_for(endpoint) }}" data-skeleton="{{ skeletons[endpoint] }}"{% if request.endpoint == endpoint %} class="active" aria-current="page"{% endif %}>{{ icon(ic) }}<span>{{ short }}</span>{% if endpoint == 'admin_requests' %}<span class="nav-badge" data-live-badge hidden></span>{% endif %}</a>
+      <a href="{{ url_for(endpoint) }}" data-skeleton="{{ skeletons[endpoint] }}"{% if request.endpoint == endpoint %} class="active" aria-current="page"{% endif %}>{{ icon(ic) }}<span>{{ short }}</span>{% if endpoint == 'admin_requests' %}{% set waiting = page.values.pending|length if page is defined and page.values.pending is defined else 0 %}<span class="nav-badge" data-live-badge aria-label="{{ waiting }} waiting"{% if not waiting %} hidden{% endif %}>{{ waiting }}</span>{% endif %}</a>
       {% endfor %}
     </nav>
   </div>
@@ -99,6 +99,6 @@
   <script src="{{ url_for('static', filename='list.js') }}" defer></script>
   <script src="{{ url_for('static', filename='actions.js') }}" defer></script>
   <script src="{{ url_for('static', filename='loading.js') }}" defer></script>
-  {% if session.get('role') == 'admin' %}<script src="{{ url_for('static', filename='live.js') }}" data-url="{{ url_for('admin_live') }}" defer></script>{% endif %}
+  {% if page is defined %}<script src="{{ url_for('static', filename='live.js') }}" data-url="{{ url_for('live', name=page.name) }}" data-every="{{ page.every }}" defer></script>{% endif %}
 </body>
 </html>

@@ -96,9 +96,6 @@ class Catalog:
         title = deleted[0].get("title") or "The book"
         return Notice(True, "Book deleted", f"“{title}” was removed from the catalog.")
 
-    def requested_by(self, user_id):
-        return self.requests.active_book_ids(user_id)
-
     def request_borrow(self, user_id, book_id):
         if self.requests.has_active(user_id, book_id):
             return Notice(False, "Already requested", "You already requested or borrowed this book.")

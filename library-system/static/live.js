@@ -3,12 +3,14 @@
   var URL_LIVE = script && script.getAttribute('data-url');
   if (!URL_LIVE || !window.fetch) return;
 
-  var EVERY = 5000;
-  var seen = null;
+  var every = (parseFloat(script.getAttribute('data-every')) || 5) * 1000;
+  var pendingSeen = null;
+  var mineSeen = null;
   var timer = null;
   var running = false;
   var again = false;
   var generation = 0;
+  var stopped = false;
 
   function parse(html) {
     var template = document.createElement('template');
@@ -16,86 +18,160 @@
     return template.content.firstElementChild;
   }
 
-  function setCount(count) {
-    document.querySelectorAll('[data-live-badge]').forEach(function (badge) {
-      badge.textContent = count > 99 ? '99+' : count;
-      badge.hidden = count === 0;
-      badge.setAttribute('aria-label', count + ' waiting');
-    });
-    document.querySelectorAll('[data-live-count]').forEach(function (el) { el.textContent = count; });
-    document.querySelectorAll('[data-live-hint]').forEach(function (el) {
-      el.textContent = count ? 'Requests to review' : 'All caught up';
-    });
+  function toast(title, body) {
+    if (window.Notify) window.Notify.show({ title: title, body: body }, false);
   }
 
-  function syncPendingList(pending) {
-    var table = document.getElementById('pending-list');
-    if (!table) return;
-    var body = table.tBodies[0];
-    var wanted = {};
-    pending.forEach(function (r) { wanted[r.id] = r; });
+  // Don't pull a row out from under someone who is using it.
+  function inUse(el) {
+    return el.getAttribute('aria-busy') === 'true' ||
+      el.classList.contains('is-removing') ||
+      el.contains(document.activeElement) && document.activeElement !== document.body ||
+      !!el.querySelector('details[open]');
+  }
 
+  function known() {
+    var parts = [];
+    document.querySelectorAll('[data-list][data-live-hash], [data-live-block]').forEach(function (el) {
+      var id = el.id || el.getAttribute('data-live-block');
+      parts.push(id + ':' + el.getAttribute('data-live-hash'));
+    });
+    return parts.join(',');
+  }
+
+  function syncList(list, data) {
+    var body = list.tagName === 'TABLE' ? list.tBodies[0] : list;
+    var wanted = {};
+    data.items.forEach(function (item) { wanted[item.id] = item; });
+    var complete = true;
     var changed = false;
+
     body.querySelectorAll('[data-item][data-id]').forEach(function (row) {
       var id = row.getAttribute('data-id');
-      if (wanted[id]) { delete wanted[id]; return; }
-      // Someone else already handled it. Leave rows mid-save alone.
-      if (row.getAttribute('aria-busy') === 'true' || row.classList.contains('is-removing')) return;
-      row.remove();
+      var item = wanted[id];
+      delete wanted[id];
+      if (item && row.getAttribute('data-key') === item.key) return;
+      if (inUse(row)) { complete = false; return; }
+      if (!item) {
+        row.remove();
+        changed = true;
+        return;
+      }
+      var fresh = parse(item.html);
+      if (!fresh) return;
+      fresh._order = row._order;
+      flash(fresh);
+      row.replaceWith(fresh);
       changed = true;
     });
 
     Object.keys(wanted).forEach(function (id) {
       var row = parse(wanted[id].html);
       if (!row) return;
-      row.classList.add('is-new');
+      flash(row);
       body.appendChild(row);
-      setTimeout(function () { row.classList.remove('is-new'); }, 2500);
       changed = true;
     });
 
-    if (changed && window.Lists) window.Lists.refresh('pending-list');
+    // Only remember the new version once every change has landed; otherwise retry next round.
+    if (complete) list.setAttribute('data-live-hash', data.hash);
+    if (changed && window.Lists) window.Lists.refresh(list.id);
   }
 
-  function announce(fresh) {
-    if (!fresh.length || !window.Notify) return;
-    var body = fresh.length === 1
-      ? fresh[0].student + ' wants to borrow “' + fresh[0].title + '”.'
-      : fresh.length + ' new borrow requests are waiting.';
-    window.Notify.show({ title: 'New borrow request', body: body }, false);
+  function syncBlock(block, data) {
+    var open = Array.prototype.map.call(block.querySelectorAll('details'), function (d) { return d.open; });
+    block.innerHTML = data.html;
+    block.querySelectorAll('details').forEach(function (d, i) { if (open[i]) d.open = true; });
+    block.setAttribute('data-live-hash', data.hash);
+  }
+
+  function flash(el) {
+    el.classList.add('is-new');
+    setTimeout(function () { el.classList.remove('is-new'); }, 2500);
+  }
+
+  function setBadge(count) {
+    document.querySelectorAll('[data-live-badge]').forEach(function (badge) {
+      badge.textContent = count > 99 ? '99+' : count;
+      badge.hidden = count === 0;
+      badge.setAttribute('aria-label', count + ' waiting');
+    });
+  }
+
+  // Admin: a borrower sent a new request.
+  function notePending(pending) {
+    var ids = {};
+    pending.forEach(function (r) { ids[r.id] = true; });
+    if (pendingSeen) {
+      var fresh = pending.filter(function (r) { return !pendingSeen[r.id]; });
+      if (fresh.length === 1) toast('New borrow request', fresh[0].student + ' wants to borrow “' + fresh[0].title + '”.');
+      else if (fresh.length > 1) toast('New borrow requests', fresh.length + ' new borrow requests are waiting.');
+    }
+    pendingSeen = ids;
+    setBadge(pending.length);
+  }
+
+  // Borrower: the library approved, declined or checked in one of their requests.
+  var MINE = {
+    approved: function (r) { return ['Request approved', '“' + r.title + '” is now borrowed' + (r.due ? ', due ' + r.due : '') + '.']; },
+    declined: function (r) { return ['Request declined', 'Your request for “' + r.title + '” was declined.']; },
+    returned: function (r) { return ['Book returned', '“' + r.title + '” was marked as returned. Thank you!']; }
+  };
+
+  function noteMine(mine) {
+    var now = {};
+    mine.forEach(function (r) { now[r.id] = r.status; });
+    if (mineSeen) {
+      mine.forEach(function (r) {
+        var before = mineSeen[r.id];
+        if (before && before !== r.status && MINE[r.status]) toast.apply(null, MINE[r.status](r));
+      });
+    }
+    mineSeen = now;
+  }
+
+  function apply(data) {
+    Object.keys(data.lists || {}).forEach(function (id) {
+      var list = document.getElementById(id);
+      if (list) syncList(list, data.lists[id]);
+    });
+    Object.keys(data.blocks || {}).forEach(function (id) {
+      var block = document.querySelector('[data-live-block="' + id + '"]');
+      if (block) syncBlock(block, data.blocks[id]);
+    });
+    var values = data.values || {};
+    if (values.pending) notePending(values.pending);
+    if (values.mine) noteMine(values.mine);
+    if (data.every) every = data.every * 1000;
   }
 
   function check() {
+    if (stopped) return;
     if (running) { again = true; return; }
     running = true;
     var started = generation;
-    fetch(URL_LIVE, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin', cache: 'no-store' })
-      .then(function (res) {
-        var type = res.headers.get('Content-Type') || '';
-        if (!res.ok || type.indexOf('application/json') === -1) throw new Error('not json');
-        return res.json();
-      })
-      .then(function (data) {
-        // A save finished while this was in flight, so this answer may be out of date.
-        if (started !== generation) { again = true; return; }
-        var ids = {};
-        data.pending.forEach(function (r) { ids[r.id] = true; });
-        if (seen) announce(data.pending.filter(function (r) { return !seen[r.id]; }));
-        seen = ids;
-        setCount(data.count);
-        syncPendingList(data.pending);
-      })
-      .catch(function () { /* try again next round */ })
-      .then(function () {
-        running = false;
-        if (again) { again = false; check(); }
-        else schedule();
-      });
+    fetch(URL_LIVE + '?h=' + encodeURIComponent(known()), {
+      headers: { 'Accept': 'application/json' }, credentials: 'same-origin', cache: 'no-store'
+    }).then(function (res) {
+      if (res.status === 401) { stopped = true; return null; }
+      var type = res.headers.get('Content-Type') || '';
+      if (!res.ok || type.indexOf('application/json') === -1) throw new Error('not json');
+      return res.json();
+    }).then(function (data) {
+      if (!data) return;
+      // A save finished while this was in flight, so this answer may be out of date.
+      if (started !== generation) { again = true; return; }
+      apply(data);
+    }).catch(function () { /* try again next round */ }).then(function () {
+      running = false;
+      if (again) { again = false; check(); }
+      else schedule();
+    });
   }
 
   function schedule() {
     clearTimeout(timer);
-    if (!document.hidden) timer = setTimeout(check, EVERY);
+    if (!document.hidden && !stopped) timer = setTimeout(check, every);
   }
 
   // Stop checking while the tab is in the background; catch up as soon as it's back.
@@ -104,7 +180,7 @@
     else check();
   });
 
-  // The admin just saved something here: refresh right away instead of waiting.
+  // Something was just saved on this page: refresh right away instead of waiting.
   document.addEventListener('app:saved', function () {
     generation++;
     check();

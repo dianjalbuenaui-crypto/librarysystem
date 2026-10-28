@@ -8,6 +8,7 @@ from flask import (Flask, flash, get_template_attribute, jsonify, redirect, rend
 from accounts import AccountService, home_for, login_required
 from database import BookRepository, Database, RequestRepository, UserRepository, to_date
 from library import Catalog, Loans, Reports
+from live import LivePage, keyed, parse_known
 from password import PasswordHasher, PasswordPolicy
 
 load_dotenv()
@@ -108,31 +109,116 @@ def logout():
     return redirect(url_for("index"))
 
 
+# Each page lists the parts that stay in sync with the database while it is open.
+# The same builder renders the page and answers /live/<page>, so both always agree.
+
+def admin_values(pending):
+    return {"pending": [{"id": r["id"], "student": r["student"], "title": r["title"]} for r in pending]}
+
+
+def user_values(history):
+    return {"mine": [{"id": h["id"], "status": h["status"], "title": h["title"],
+                      "due": h["due_date"].strftime("%d/%m/%Y") if h.get("due_date") else None} for h in history]}
+
+
+def admin_dashboard_page(q="", show="all"):
+    today = date.today()
+    summary = reports.monthly_summary(today)
+    trend = reports.trend(summary)
+    pending = loans.pending()
+    counts = reports.loan_counts(today)
+    top_books = reports.top_books()
+    activity = reports.activity(q, show)
+    return LivePage(
+        "admin_dashboard", every=10,
+        lists={"activity-list": (activity, lambda a: partial("activity_row", a, today))},
+        blocks={"admin-stats": lambda: partial("admin_stats", counts, len(pending), summary[-1]),
+                "admin-chart": lambda: partial("admin_chart", summary, trend),
+                "admin-top": lambda: partial("admin_top", top_books)},
+        values=admin_values(pending), activity=activity, q=q, show=show, today=today)
+
+
+def admin_catalog_page(q=""):
+    books = catalog.search(q)
+    return LivePage("admin_catalog",
+                    lists={"books": (books, lambda b: partial("admin_book", b, b["id"] % 4))},
+                    values=admin_values(loans.pending()), books=books, q=q)
+
+
+def admin_requests_page(q=""):
+    today = date.today()
+    pending = loans.pending(q)
+    on_loan = loans.on_loan(q)
+    return LivePage("admin_requests",
+                    lists={"pending-list": (pending, lambda r: partial("pending_row", r)),
+                           "loans-list": (on_loan, lambda l: partial("loan_row", l, today))},
+                    values=admin_values(pending), pending=pending, loans=on_loan, q=q, today=today)
+
+
+def user_dashboard_page(q=""):
+    today = date.today()
+    history, stats = loans.history_for(session["user_id"], q)
+    return LivePage("user_dashboard",
+                    lists={"history": (history, lambda h: partial("history_row", h, today))},
+                    blocks={"user-stats": lambda: partial("user_stats", stats)},
+                    values=user_values(history), history=history, stats=stats, today=today)
+
+
+def user_catalog_page(q=""):
+    history = loans.requests.for_user(session["user_id"])
+    state = {h["book_id"]: h["status"] for h in reversed(history) if h["status"] in ("pending", "approved")}
+    books = catalog.search(q)
+    for b in books:
+        b["state"] = state.get(b["id"])
+    return LivePage("user_catalog",
+                    lists={"books": (books, lambda b: partial("user_book", b, b["id"] % 4))},
+                    values=user_values(history), books=books, q=q)
+
+
+LIVE_PAGES = {
+    "admin_dashboard": ("admin", admin_dashboard_page),
+    "admin_catalog": ("admin", admin_catalog_page),
+    "admin_requests": ("admin", admin_requests_page),
+    "user_dashboard": ("user", user_dashboard_page),
+    "user_catalog": ("user", user_catalog_page),
+}
+
+
+def show_page(template, page):
+    return render_template(template, page=page, **page.data)
+
+
+@app.route("/live/<name>")
+def live(name):
+    role, build = LIVE_PAGES.get(name, (None, None))
+    if not build:
+        return jsonify(error="unknown page"), 404
+    if session.get("role") != role:
+        return jsonify(error="signed out"), 401
+    page = build()
+    out = page.changes(parse_known(request.args.get("h")))
+    out.update(values=page.values, every=page.every)
+    return jsonify(out)
+
+
 @app.route("/admin")
 @login_required("admin")
 def admin_dashboard():
-    today = date.today()
-    summary = reports.monthly_summary(today)
-    q = request.args.get("q", "").strip()
-    show = request.args.get("show", "all")
-    return render_template("admin-dashboard.html", summary=summary, this_month=summary[-1],
-                           waiting=reports.waiting(), activity=reports.activity(q, show),
-                           counts=reports.loan_counts(today), top_books=reports.top_books(),
-                           trend=reports.trend(summary), q=q, show=show, today=today)
+    return show_page("admin-dashboard.html",
+                     admin_dashboard_page(request.args.get("q", "").strip(), request.args.get("show", "all")))
 
 
 @app.route("/admin/catalog")
 @login_required("admin")
 def admin_catalog():
-    q = request.args.get("q", "")
-    return render_template("admin-catalog.html", books=catalog.search(q), q=q)
+    return show_page("admin-catalog.html", admin_catalog_page(request.args.get("q", "")))
 
 
 @app.route("/admin/books/add", methods=["POST"])
 @login_required("admin")
 def add_book():
     notice = catalog.add(request.form)
-    changes = {"add": partial("admin_book", notice.book, notice.book["id"] % 4)} if notice.ok else {}
+    changes = {"add": partial("admin_book", keyed([notice.book])[0], notice.book["id"] % 4)} if notice.ok else {}
     return finish(notice, "admin_catalog", **changes)
 
 
@@ -140,7 +226,7 @@ def add_book():
 @login_required("admin")
 def update_book(book_id):
     notice = catalog.update(book_id, request.form)
-    changes = {"replace": partial("admin_book", notice.book, book_id % 4)} if notice.ok else {}
+    changes = {"replace": partial("admin_book", keyed([notice.book])[0], book_id % 4)} if notice.ok else {}
     return finish(notice, "admin_catalog", **changes)
 
 
@@ -154,19 +240,7 @@ def delete_book(book_id):
 @app.route("/admin/requests")
 @login_required("admin")
 def admin_requests():
-    q = request.args.get("q", "").strip()
-    return render_template("admin-requests.html", pending=loans.pending(q),
-                           loans=loans.on_loan(q), q=q, today=date.today())
-
-
-@app.route("/admin/live")
-@login_required("admin")
-def admin_live():
-    """Pending requests, polled by admin pages so new ones show up without a reload."""
-    pending = loans.pending()
-    return jsonify(count=len(pending),
-                   pending=[{"id": r["id"], "student": r["student"], "title": r["title"],
-                             "html": partial("pending_row", r)} for r in pending])
+    return show_page("admin-requests.html", admin_requests_page(request.args.get("q", "").strip()))
 
 
 @app.route("/admin/requests/<int:rid>/<action>", methods=["POST"])
@@ -177,23 +251,20 @@ def request_action(rid, action):
     changes = {"remove": notice.ok or notice.result in ("not_found", "not_pending", "not_on_loan")}
     loan = loans.loan(rid) if notice.result == "approved" and wants_json() else None
     if loan:
-        changes.update(add=partial("loan_row", loan, today), add_to="loans-list")
+        changes.update(add=partial("loan_row", keyed([loan])[0], today), add_to="loans-list")
     return finish(notice, "admin_requests", **changes)
 
 
 @app.route("/user")
 @login_required("user")
 def user_dashboard():
-    history, stats = loans.history_for(session["user_id"], request.args.get("q", "").strip())
-    return render_template("user-dashboard.html", history=history, stats=stats, today=date.today())
+    return show_page("user-dashboard.html", user_dashboard_page(request.args.get("q", "").strip()))
 
 
 @app.route("/user/catalog")
 @login_required("user")
 def user_catalog():
-    q = request.args.get("q", "")
-    return render_template("user-catalog.html", books=catalog.search(q), q=q,
-                           requested=catalog.requested_by(session["user_id"]))
+    return show_page("user-catalog.html", user_catalog_page(request.args.get("q", "")))
 
 
 @app.route("/user/request/<int:book_id>", methods=["POST"])

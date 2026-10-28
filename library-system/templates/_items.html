@@ -1,7 +1,7 @@
 {% from '_macros.html' import badge, status_rank %}
 
 {% macro admin_book(b, shade) -%}
-<article class="book" data-item data-search="{{ b.search }}" data-title="{{ b.title }}" data-author="{{ b.author }}" data-copies="{{ b.copies }}"{% if not b.visible %} hidden{% endif %}>
+<article class="book" data-item data-id="{{ b.id }}" data-key="{{ b.key }}" data-search="{{ b.search }}" data-title="{{ b.title }}" data-author="{{ b.author }}" data-copies="{{ b.copies }}"{% if not b.visible %} hidden{% endif %}>
   <div class="book-cover cover-{{ shade }}" aria-hidden="true">
     <span class="cover-letter">{{ b.title[:1]|upper }}</span>
     <span class="cover-author">{{ b.author }}</span>
@@ -38,8 +38,8 @@
 <button type="button" class="btn btn-outline btn-small btn-full" disabled>Requested</button>
 {%- endmacro %}
 
-{% macro user_book(b, requested, shade) -%}
-<article class="book" data-item data-search="{{ b.search }}" data-title="{{ b.title }}" data-author="{{ b.author }}" data-copies="{{ b.copies }}"{% if not b.visible %} hidden{% endif %}>
+{% macro user_book(b, shade) -%}
+<article class="book" data-item data-id="{{ b.id }}" data-key="{{ b.key }}" data-state="{{ b.state or '' }}" data-search="{{ b.search }}" data-title="{{ b.title }}" data-author="{{ b.author }}" data-copies="{{ b.copies }}"{% if not b.visible %} hidden{% endif %}>
   <div class="book-cover cover-{{ shade }}" aria-hidden="true">
     <span class="cover-letter">{{ b.title[:1]|upper }}</span>
     <span class="cover-author">{{ b.author }}</span>
@@ -50,7 +50,9 @@
     <p class="book-copies"><strong>{{ b.copies }}</strong> cop{{ 'y' if b.copies == 1 else 'ies' }} available</p>
   </div>
   <div class="book-actions">
-    {% if b.id in requested %}
+    {% if b.state == 'approved' %}
+      <button type="button" class="btn btn-outline btn-small btn-full" disabled>Borrowed</button>
+    {% elif b.state == 'pending' %}
       {{ requested_button() }}
     {% elif b.copies < 1 %}
       <button type="button" class="btn btn-outline btn-small btn-full" disabled>Unavailable</button>
@@ -64,7 +66,7 @@
 {%- endmacro %}
 
 {% macro pending_row(r) -%}
-<tr data-item data-id="{{ r.id }}" data-search="{{ r.search }}" data-student="{{ r.student }}" data-title="{{ r.title }}" data-requested="{{ r.requested_at or '' }}"{% if not r.visible %} hidden{% endif %}>
+<tr data-item data-id="{{ r.id }}" data-key="{{ r.key }}" data-search="{{ r.search }}" data-student="{{ r.student }}" data-title="{{ r.title }}" data-requested="{{ r.requested_at or '' }}"{% if not r.visible %} hidden{% endif %}>
   <td data-label="Student" class="cell-title">{{ r.student }}</td>
   <td data-label="Book">{{ r.title }}</td>
   <td data-label="Requested on">{{ r.requested_at|fmt }}</td>
@@ -76,7 +78,7 @@
 {%- endmacro %}
 
 {% macro loan_row(l, today) -%}
-<tr data-item data-search="{{ l.search }}" data-student="{{ l.student }}" data-title="{{ l.title }}" data-due="{{ l.due_date or '' }}"
+<tr data-item data-id="{{ l.id }}" data-key="{{ l.key }}" data-search="{{ l.search }}" data-student="{{ l.student }}" data-title="{{ l.title }}" data-due="{{ l.due_date or '' }}"
     data-status="{{ status_rank(l.status, l.due_date, today) }}"{% if not l.visible %} hidden{% endif %}>
   <td data-label="Student" class="cell-title">{{ l.student }}</td>
   <td data-label="Book">{{ l.title }}</td>
@@ -86,4 +88,110 @@
     <form method="post" action="{{ url_for('request_action', rid=l.id, action='return') }}" class="inline" data-async><button type="submit" class="btn btn-small" data-busy="Saving…">Mark as returned</button></form>
   </td>
 </tr>
+{%- endmacro %}
+
+{% macro activity_row(a, today) -%}
+<tr data-item data-id="{{ a.id }}" data-key="{{ a.key }}" data-search="{{ a.search }}" data-group="{{ a.group }}" data-student="{{ a.student }}" data-sid="{{ a.student_id }}" data-title="{{ a.title }}"
+    data-status="{{ status_rank(a.status, a.due_date, today) }}" data-borrowed="{{ a.borrowed_at or '' }}" data-returned="{{ a.returned_at or '' }}"{% if not a.visible %} hidden{% endif %}>
+  <td data-label="Student" class="cell-title">{{ a.student }}</td>
+  <td data-label="ID">{{ a.student_id }}</td>
+  <td data-label="Book">{{ a.title }}</td>
+  <td data-label="Status">{{ badge(a.status, a.due_date, today) }}</td>
+  <td data-label="Borrowed on">{{ a.borrowed_at|fmt }}</td>
+  <td data-label="Returned on">{{ a.returned_at|fmt }}</td>
+</tr>
+{%- endmacro %}
+
+{% macro admin_stats(counts, waiting, this_month) -%}
+<section class="stats" aria-label="At a glance">
+  <div class="stat">
+    <span class="stat-label">Books on loan</span>
+    <span class="stat-number">{{ counts.on_loan }}</span>
+    <span class="stat-hint">Borrowed and not yet returned</span>
+  </div>
+  <div class="stat{% if counts.overdue %} stat-warn{% endif %}">
+    <span class="stat-label">Overdue</span>
+    <span class="stat-number">{{ counts.overdue }}</span>
+    <span class="stat-hint">{{ 'Past their due date' if counts.overdue else 'Nothing is late' }}{% if counts.due_today %} · {{ counts.due_today }} due today{% endif %}</span>
+  </div>
+  <div class="stat stat-accent">
+    <span class="stat-label">Waiting for approval</span>
+    <span class="stat-number">{{ waiting }}</span>
+    <span class="stat-hint">{{ 'Requests to review' if waiting else 'All caught up' }}</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">Returned this month</span>
+    <span class="stat-number">{{ this_month.returned }}</span>
+    <span class="stat-hint">Books checked back in</span>
+  </div>
+</section>
+{%- endmacro %}
+
+{% macro admin_chart(summary, trend) -%}
+<section class="card">
+  <div class="card-head"><h2>Books borrowed each month</h2></div>
+  <p class="chart-summary"><strong>{{ trend[0] }}</strong>, {{ trend[1] }}.</p>
+  <div class="simple-chart" role="img" aria-label="Books borrowed each month: {% for row in summary %}{{ row.label }} {{ row.borrowed }}{{ ', ' if not loop.last }}{% endfor %}.">
+    {% for row in summary %}
+    <div class="sc-col{% if loop.last %} is-current{% endif %}">
+      <div class="sc-track">
+        <span class="sc-value">{{ row.borrowed }}</span>
+        <div class="sc-bar" style="--v: {{ row.borrowed_pct }}%"></div>
+      </div>
+      <span class="sc-label">{{ row.short }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  <details class="numbers">
+    <summary>Show the numbers</summary>
+    <div class="table-wrap"><table class="table">
+      <thead><tr><th>Month</th><th class="num">Requested</th><th class="num">Borrowed</th><th class="num">Returned</th></tr></thead>
+      <tbody>
+        {% for row in summary|reverse %}
+        <tr><td>{{ row.label }}</td><td class="num">{{ row.requested }}</td><td class="num">{{ row.borrowed }}</td><td class="num">{{ row.returned }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+  </details>
+</section>
+{%- endmacro %}
+
+{% macro admin_top(top_books) -%}
+<section class="card">
+  <div class="card-head"><h2>Most borrowed books</h2></div>
+  {% if top_books %}
+  <p class="chart-summary">The {{ top_books|length }} book{{ '' if top_books|length == 1 else 's' }} students borrow most.</p>
+  <ol class="top-list">
+    {% for b in top_books %}
+    <li>
+      <span class="top-name" title="{{ b.title }}">{{ b.title }}</span>
+      <span class="top-count">{{ b.count }} time{{ '' if b.count == 1 else 's' }}</span>
+      <span class="top-track" aria-hidden="true"><span class="top-bar" style="--v: {{ b.pct }}%; display: block;"></span></span>
+    </li>
+    {% endfor %}
+  </ol>
+  {% else %}
+  <p class="chart-summary">No books have been borrowed yet.</p>
+  {% endif %}
+</section>
+{%- endmacro %}
+
+{% macro history_row(h, today) -%}
+<tr data-item data-id="{{ h.id }}" data-key="{{ h.key }}" data-state="{{ h.status }}" data-search="{{ h.search }}" data-title="{{ h.title }}" data-requested="{{ h.requested_at or '' }}" data-borrowed="{{ h.borrowed_at or '' }}"
+    data-due="{{ h.due_date or '' }}" data-returned="{{ h.returned_at or '' }}" data-status="{{ status_rank(h.status, h.due_date, today) }}"{% if not h.visible %} hidden{% endif %}>
+  <td data-label="Book" class="cell-title">{{ h.title }}</td>
+  <td data-label="Borrowed on">{{ h.borrowed_at|fmt }}</td>
+  <td data-label="Due date">{{ h.due_date|fmt }}</td>
+  <td data-label="Returned on">{{ h.returned_at|fmt }}</td>
+  <td data-label="Status">{{ badge(h.status, h.due_date, today) }}</td>
+</tr>
+{%- endmacro %}
+
+{% macro user_stats(stats) -%}
+<section class="stats" aria-label="Your borrowing">
+  <div class="stat"><span class="stat-label">Currently borrowed</span><span class="stat-number">{{ stats.borrowed }}</span></div>
+  <div class="stat"><span class="stat-label">Pending requests</span><span class="stat-number">{{ stats.pending }}</span></div>
+  <div class="stat"><span class="stat-label">Books returned</span><span class="stat-number">{{ stats.returned }}</span></div>
+  <div class="stat stat-accent"><span class="stat-label">Next due date</span><span class="stat-number stat-date">{{ stats.next_due|fmt }}</span></div>
+</section>
 {%- endmacro %}

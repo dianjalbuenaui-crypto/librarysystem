@@ -571,3 +571,9 @@ th[aria-sort="descending"] .sort-arrow::after { content: "\2193"; opacity: 1; co
   .bone { animation: none; }
   .table tbody tr.is-new td { animation: none; }
 }
+
+/* Parts of the page that refresh themselves */
+.live-block { display: contents; }
+.book.is-new { animation: card-new 2.5s ease-out; }
+@keyframes card-new { from { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 45%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .book.is-new { animation: none; } }

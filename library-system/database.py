@@ -119,10 +119,6 @@ class RequestRepository(Repository):
                 .eq("user_id", user_id).order("requested_at", desc=True).execute().data)
         return [Database.flatten(r) for r in rows]
 
-    def active_book_ids(self, user_id):
-        rows = self.table.select("book_id").eq("user_id", user_id).in_("status", self.ACTIVE).execute().data
-        return {r["book_id"] for r in rows}
-
     def has_active(self, user_id, book_id):
         rows = (self.table.select("id").eq("user_id", user_id).eq("book_id", book_id)
                 .in_("status", self.ACTIVE).limit(1).execute().data)

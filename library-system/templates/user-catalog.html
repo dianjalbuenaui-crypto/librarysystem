@@ -29,9 +29,9 @@
 </form>
 <p class="list-count" data-list-count="books" aria-live="polite"></p>
 
-<section class="book-grid" id="books" data-list data-noun-one="book" data-noun-many="books" aria-label="Books">
+<section class="book-grid" id="books" data-live-hash="{{ page.list_hash('books') }}" data-list data-noun-one="book" data-noun-many="books" aria-label="Books">
   {% for b in books %}
-  {{ user_book(b, requested, b.id % 4) }}
+  {{ user_book(b, b.id % 4) }}
   {% endfor %}
   <p class="empty" data-list-placeholder{% if books %} hidden{% endif %}>No books in the catalog yet.</p>
 </section>

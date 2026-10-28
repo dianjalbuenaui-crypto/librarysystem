@@ -28,7 +28,7 @@
 </form>
 <p class="list-count" data-list-count="books" aria-live="polite"></p>
 
-<section class="book-grid" id="books" data-list data-noun-one="book" data-noun-many="books" aria-label="Books">
+<section class="book-grid" id="books" data-live-hash="{{ page.list_hash('books') }}" data-list data-noun-one="book" data-noun-many="books" aria-label="Books">
   {% for b in books %}
   {{ admin_book(b, b.id % 4) }}
   {% endfor %}

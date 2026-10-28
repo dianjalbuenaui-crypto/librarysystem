@@ -26,7 +26,7 @@
       ('title:asc:text', 'Book A–Z'),
     ], request.args.get('pending_sort')) }}
   </div>
-  <div class="table-wrap"><table class="table table-cards" id="pending-list" data-list data-noun-one="request" data-noun-many="requests">
+  <div class="table-wrap"><table class="table table-cards" id="pending-list" data-live-hash="{{ page.list_hash('pending-list') }}" data-list data-noun-one="request" data-noun-many="requests">
     <thead><tr>
       <th data-sort-key="student">Student</th>
       <th data-sort-key="title">Book</th>
@@ -54,7 +54,7 @@
       ('title:asc:text', 'Book A–Z'),
     ], request.args.get('loans_sort')) }}
   </div>
-  <div class="table-wrap"><table class="table table-cards" id="loans-list" data-list data-noun-one="loan" data-noun-many="loans">
+  <div class="table-wrap"><table class="table table-cards" id="loans-list" data-live-hash="{{ page.list_hash('loans-list') }}" data-list data-noun-one="loan" data-noun-many="loans">
     <thead><tr>
       <th data-sort-key="student">Student</th>
       <th data-sort-key="title">Book</th>

@@ -33,6 +33,7 @@
     });
     var item = form.closest('[data-item]');
     if (item) item.setAttribute('aria-busy', busy ? 'true' : 'false');
+    return item;
   }
 
   function removeItem(item, list) {
@@ -95,7 +96,7 @@
     e.preventDefault();
     if (form._busy) return;
 
-    setBusy(form, true);
+    var item = setBusy(form, true);
     fetch(form.action, {
       method: 'POST',
       body: new FormData(form),
@@ -119,6 +120,7 @@
     }).then(function () {
       form.removeAttribute('data-confirmed');
       if (form.isConnected) setBusy(form, false);
+      else if (item) item.setAttribute('aria-busy', 'false');
     });
   });
 })();
