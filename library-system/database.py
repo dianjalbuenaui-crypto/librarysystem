@@ -109,6 +109,11 @@ class RequestRepository(Repository):
                 .eq("status", "approved").order("due_date").execute().data)
         return [Database.flatten(r) for r in rows]
 
+    def loan(self, request_id):
+        rows = (self.table.select("id, borrowed_at, due_date, status, users(name), books(title)")
+                .eq("id", request_id).limit(1).execute().data)
+        return [Database.flatten(r) for r in rows]
+
     def for_user(self, user_id):
         rows = (self.table.select("*, books(title)")
                 .eq("user_id", user_id).order("requested_at", desc=True).execute().data)

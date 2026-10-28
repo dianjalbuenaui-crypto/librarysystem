@@ -2,7 +2,8 @@ import os
 from datetime import date
 
 from dotenv import load_dotenv
-from flask import Flask, flash, jsonify, redirect, render_template, request, session, url_for
+from flask import (Flask, flash, get_template_attribute, jsonify, redirect, render_template, request,
+                   session, url_for)
 
 from accounts import AccountService, home_for, login_required
 from database import BookRepository, Database, RequestRepository, UserRepository, to_date
@@ -40,6 +41,22 @@ accounts = AccountService(users, password_policy, PasswordHasher(),
 catalog = Catalog(books, borrow_requests)
 loans = Loans(borrow_requests, LOAN_DAYS)
 reports = Reports(borrow_requests)
+
+
+def wants_json():
+    return request.headers.get("X-Requested-With") == "fetch"
+
+
+def partial(name, *args):
+    return str(get_template_attribute("_items.html", name)(*args))
+
+
+def finish(notice, endpoint, **changes):
+    """Answer a background save with just what changed, or fall back to a full page redirect."""
+    if wants_json():
+        return jsonify(ok=notice.ok, toast=notice.message, **changes)
+    flash(notice.message, notice.category)
+    return redirect(url_for(endpoint))
 
 
 @app.template_filter("fmt")
@@ -115,24 +132,23 @@ def admin_catalog():
 @login_required("admin")
 def add_book():
     notice = catalog.add(request.form)
-    flash(notice.message, notice.category)
-    return redirect(url_for("admin_catalog"))
+    changes = {"add": partial("admin_book", notice.book, notice.book["id"] % 4)} if notice.ok else {}
+    return finish(notice, "admin_catalog", **changes)
 
 
 @app.route("/admin/books/<int:book_id>/update", methods=["POST"])
 @login_required("admin")
 def update_book(book_id):
     notice = catalog.update(book_id, request.form)
-    flash(notice.message, notice.category)
-    return redirect(url_for("admin_catalog"))
+    changes = {"replace": partial("admin_book", notice.book, book_id % 4)} if notice.ok else {}
+    return finish(notice, "admin_catalog", **changes)
 
 
 @app.route("/admin/books/<int:book_id>/delete", methods=["POST"])
 @login_required("admin")
 def delete_book(book_id):
     notice = catalog.delete(book_id)
-    flash(notice.message, notice.category)
-    return redirect(url_for("admin_catalog"))
+    return finish(notice, "admin_catalog", remove=notice.ok)
 
 
 @app.route("/admin/requests")
@@ -146,8 +162,13 @@ def admin_requests():
 @app.route("/admin/requests/<int:rid>/<action>", methods=["POST"])
 @login_required("admin")
 def request_action(rid, action):
-    flash(loans.handle(rid, action, date.today()))
-    return redirect(url_for("admin_requests"))
+    today = date.today()
+    notice = loans.handle(rid, action, today)
+    changes = {"remove": notice.ok or notice.result in ("not_found", "not_pending", "not_on_loan")}
+    loan = loans.loan(rid) if notice.result == "approved" and wants_json() else None
+    if loan:
+        changes.update(add=partial("loan_row", loan, today), add_to="loans-list")
+    return finish(notice, "admin_requests", **changes)
 
 
 @app.route("/user")
@@ -168,8 +189,8 @@ def user_catalog():
 @app.route("/user/request/<int:book_id>", methods=["POST"])
 @login_required("user")
 def request_borrow(book_id):
-    flash(catalog.request_borrow(session["user_id"], book_id))
-    return redirect(url_for("user_catalog"))
+    notice = catalog.request_borrow(session["user_id"], book_id)
+    return finish(notice, "user_catalog", replace_form=partial("requested_button"))
 
 
 if __name__ == "__main__":

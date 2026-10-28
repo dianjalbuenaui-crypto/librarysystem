@@ -1,0 +1,89 @@
+{% from '_macros.html' import badge, status_rank %}
+
+{% macro admin_book(b, shade) -%}
+<article class="book" data-item data-search="{{ b.search }}" data-title="{{ b.title }}" data-author="{{ b.author }}" data-copies="{{ b.copies }}"{% if not b.visible %} hidden{% endif %}>
+  <div class="book-cover cover-{{ shade }}" aria-hidden="true">
+    <span class="cover-letter">{{ b.title[:1]|upper }}</span>
+    <span class="cover-author">{{ b.author }}</span>
+  </div>
+  <div class="book-body">
+    <h3>{{ b.title }}</h3>
+    <p class="muted">{{ b.author }}</p>
+    <p class="book-copies"><strong>{{ b.copies }}</strong> cop{{ 'y' if b.copies == 1 else 'ies' }} available</p>
+  </div>
+  <div class="book-actions">
+    <details class="book-edit">
+      <summary class="btn btn-outline btn-small">Edit</summary>
+      <form method="post" action="{{ url_for('update_book', book_id=b.id) }}" data-async>
+        <label class="sr-only" for="t{{ b.id }}">Title</label>
+        <input type="text" id="t{{ b.id }}" name="title" value="{{ b.title }}" required>
+        <label class="sr-only" for="a{{ b.id }}">Author</label>
+        <input type="text" id="a{{ b.id }}" name="author" value="{{ b.author }}" required>
+        <label class="sr-only" for="c{{ b.id }}">Copies</label>
+        <input type="number" id="c{{ b.id }}" name="copies" value="{{ b.copies }}" min="0" inputmode="numeric" required>
+        <button type="submit" class="btn btn-small btn-full" data-busy="Saving…">Save</button>
+      </form>
+    </details>
+    <form method="post" action="{{ url_for('delete_book', book_id=b.id) }}" data-async
+          data-confirm="Delete this book?"
+          data-confirm-body="“{{ b.title }}” and its borrow history will be removed. This can't be undone."
+          data-confirm-ok="Delete book">
+      <button type="submit" class="btn btn-outline btn-small btn-danger" data-busy="Deleting…">Delete</button>
+    </form>
+  </div>
+</article>
+{%- endmacro %}
+
+{% macro requested_button() -%}
+<button type="button" class="btn btn-outline btn-small btn-full" disabled>Requested</button>
+{%- endmacro %}
+
+{% macro user_book(b, requested, shade) -%}
+<article class="book" data-item data-search="{{ b.search }}" data-title="{{ b.title }}" data-author="{{ b.author }}" data-copies="{{ b.copies }}"{% if not b.visible %} hidden{% endif %}>
+  <div class="book-cover cover-{{ shade }}" aria-hidden="true">
+    <span class="cover-letter">{{ b.title[:1]|upper }}</span>
+    <span class="cover-author">{{ b.author }}</span>
+  </div>
+  <div class="book-body">
+    <h3>{{ b.title }}</h3>
+    <p class="muted">{{ b.author }}</p>
+    <p class="book-copies"><strong>{{ b.copies }}</strong> cop{{ 'y' if b.copies == 1 else 'ies' }} available</p>
+  </div>
+  <div class="book-actions">
+    {% if b.id in requested %}
+      {{ requested_button() }}
+    {% elif b.copies < 1 %}
+      <button type="button" class="btn btn-outline btn-small btn-full" disabled>Unavailable</button>
+    {% else %}
+      <form method="post" action="{{ url_for('request_borrow', book_id=b.id) }}" class="btn-full" data-async>
+        <button type="submit" class="btn btn-small btn-full" data-busy="Sending…">Request borrow</button>
+      </form>
+    {% endif %}
+  </div>
+</article>
+{%- endmacro %}
+
+{% macro pending_row(r) -%}
+<tr data-item data-search="{{ r.search }}" data-student="{{ r.student }}" data-title="{{ r.title }}" data-requested="{{ r.requested_at or '' }}"{% if not r.visible %} hidden{% endif %}>
+  <td data-label="Student" class="cell-title">{{ r.student }}</td>
+  <td data-label="Book">{{ r.title }}</td>
+  <td data-label="Requested on">{{ r.requested_at|fmt }}</td>
+  <td class="cell-actions">
+    <form method="post" action="{{ url_for('request_action', rid=r.id, action='approve') }}" class="inline" data-async><button type="submit" class="btn btn-small" data-busy="Approving…">Approve</button></form>
+    <form method="post" action="{{ url_for('request_action', rid=r.id, action='decline') }}" class="inline" data-async><button type="submit" class="btn btn-outline btn-small" data-busy="Declining…">Decline</button></form>
+  </td>
+</tr>
+{%- endmacro %}
+
+{% macro loan_row(l, today) -%}
+<tr data-item data-search="{{ l.search }}" data-student="{{ l.student }}" data-title="{{ l.title }}" data-due="{{ l.due_date or '' }}"
+    data-status="{{ status_rank(l.status, l.due_date, today) }}"{% if not l.visible %} hidden{% endif %}>
+  <td data-label="Student" class="cell-title">{{ l.student }}</td>
+  <td data-label="Book">{{ l.title }}</td>
+  <td data-label="Due date">{{ l.due_date|fmt }}</td>
+  <td data-label="Status">{{ badge(l.status, l.due_date, today) }}</td>
+  <td class="cell-actions">
+    <form method="post" action="{{ url_for('request_action', rid=l.id, action='return') }}" class="inline" data-async><button type="submit" class="btn btn-small" data-busy="Saving…">Mark as returned</button></form>
+  </td>
+</tr>
+{%- endmacro %}

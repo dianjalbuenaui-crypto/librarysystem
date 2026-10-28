@@ -32,10 +32,12 @@ def with_search(rows, query, *fields):
 
 
 class Notice:
-    def __init__(self, ok, title, body):
+    def __init__(self, ok, title, body, result=None):
         self.ok = ok
         self.title = title
         self.body = body
+        self.result = result
+        self.book = None
 
     @property
     def category(self):
@@ -68,18 +70,24 @@ class Catalog:
             title, author, copies = self._details(form)
         except ValueError:
             return Notice(False, "Book not added", "Copies must be a whole number.")
-        if not self.books.add(title, author, copies):
+        added = self.books.add(title, author, copies)
+        if not added:
             return Notice(False, "Book not added", NOT_SAVED)
-        return Notice(True, "Book added", f"“{title}” is now in the catalog with {copies_text(copies)}.")
+        notice = Notice(True, "Book added", f"“{title}” is now in the catalog with {copies_text(copies)}.")
+        notice.book = with_search(added[:1], "", "title", "author")[0]
+        return notice
 
     def update(self, book_id, form):
         try:
             title, author, copies = self._details(form)
         except ValueError:
             return Notice(False, "Changes not saved", "Copies must be a whole number.")
-        if not self.books.update(book_id, title, author, copies):
+        updated = self.books.update(book_id, title, author, copies)
+        if not updated:
             return Notice(False, "Changes not saved", NOT_SAVED)
-        return Notice(True, "Book updated", f"Changes to “{title}” were saved. {copies_text(copies).capitalize()} available.")
+        notice = Notice(True, "Book updated", f"Changes to “{title}” were saved. {copies_text(copies).capitalize()} available.")
+        notice.book = with_search(updated[:1], "", "title", "author")[0]
+        return notice
 
     def delete(self, book_id):
         deleted = self.books.delete(book_id)
@@ -93,21 +101,22 @@ class Catalog:
 
     def request_borrow(self, user_id, book_id):
         if self.requests.has_active(user_id, book_id):
-            return "You already requested or borrowed this book."
+            return Notice(False, "Already requested", "You already requested or borrowed this book.")
         self.requests.create(user_id, book_id)
-        return "Borrow request sent. Wait for admin approval."
+        return Notice(True, "Request sent", "Borrow request sent. Wait for admin approval.")
 
 
 class Loans:
     MESSAGES = {
-        "approved": "Request approved.",
-        "declined": "Request declined.",
-        "returned": "Book marked as returned.",
-        "no_copies": "No copies left to lend.",
-        "not_found": "That request no longer exists.",
-        "not_pending": "That request was already handled.",
-        "not_on_loan": "That book is not out on loan.",
+        "approved": ("Request approved", "The book is now out on loan."),
+        "declined": ("Request declined", "The borrower's request was declined."),
+        "returned": ("Book returned", "Book marked as returned."),
+        "no_copies": ("Not approved", "No copies left to lend."),
+        "not_found": ("Nothing changed", "That request no longer exists."),
+        "not_pending": ("Nothing changed", "That request was already handled."),
+        "not_on_loan": ("Nothing changed", "That book is not out on loan."),
     }
+    DONE = ("approved", "declined", "returned")
 
     def __init__(self, requests, loan_days):
         self.requests = requests
@@ -130,8 +139,13 @@ class Loans:
             else:
                 result = None
         except APIError as e:
-            return f"The database rejected the change: {e.message or e}"
-        return self.MESSAGES.get(result, "Nothing changed. Refresh the page and try again.")
+            return Notice(False, "Change not saved", f"The database rejected the change: {e.message or e}")
+        title, body = self.MESSAGES.get(result, ("Nothing changed", "Refresh the page and try again."))
+        return Notice(result in self.DONE, title, body, result)
+
+    def loan(self, request_id):
+        rows = with_search(self.requests.loan(request_id), "", "student", "title")
+        return rows[0] if rows else None
 
     def history_for(self, user_id, query=""):
         history = with_search(self.requests.for_user(user_id), query, "title")

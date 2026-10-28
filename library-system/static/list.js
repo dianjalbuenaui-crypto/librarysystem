@@ -11,12 +11,10 @@
 
   document.querySelectorAll('[data-list]').forEach(function (el) {
     var body = el.tagName === 'TABLE' ? el.tBodies[0] : el;
-    var items = Array.prototype.slice.call(body.querySelectorAll('[data-item]'));
-    items.forEach(function (item, i) { item._order = i; });
     lists[el.id] = {
       el: el,
       body: body,
-      items: items,
+      items: [],
       query: '',
       filters: {},
       sort: null,
@@ -25,9 +23,26 @@
       empty: document.querySelector('[data-list-empty="' + el.id + '"]'),
       count: document.querySelector('[data-list-count="' + el.id + '"]'),
       select: document.querySelector('[data-sort-for="' + el.id + '"]'),
-      heads: Array.prototype.slice.call(el.querySelectorAll('th[data-sort-key]'))
+      heads: Array.prototype.slice.call(el.querySelectorAll('th[data-sort-key]')),
+      placeholder: body.querySelector('[data-list-placeholder]'),
+      totals: Array.prototype.slice.call(document.querySelectorAll('[data-list-total="' + el.id + '"]'))
     };
+    collect(lists[el.id]);
   });
+
+  function collect(list) {
+    var next = 0;
+    list.items.forEach(function (item) { next = Math.max(next, item._order + 1); });
+    list.items = Array.prototype.slice.call(list.body.querySelectorAll('[data-item]'));
+    list.items.forEach(function (item) {
+      if (item._order === undefined) item._order = next++;
+    });
+    if (list.placeholder) list.placeholder.hidden = list.items.length > 0;
+    list.totals.forEach(function (el) {
+      el.textContent = list.items.length;
+      el.hidden = list.items.length === 0;
+    });
+  }
 
   function compare(a, b, key, type, dir) {
     var x = a.getAttribute('data-' + key) || '';
@@ -168,6 +183,15 @@
 
     apply(list);
   });
+
+  window.Lists = {
+    refresh: function (id) {
+      var list = lists[id];
+      if (!list) return;
+      collect(list);
+      apply(list);
+    }
+  };
 
   document.querySelectorAll('form[data-live-form]').forEach(function (form) {
     form.addEventListener('submit', function (e) { e.preventDefault(); });

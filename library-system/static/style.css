@@ -510,3 +510,8 @@ th[aria-sort="descending"] .sort-arrow::after { content: "\2193"; opacity: 1; co
   .table-cards .empty-row td::before { display: none; }
   .card:has(.table-cards) { padding: 6px 0 0; border: 0; background: transparent; }
 }
+/* Background saves */
+[data-item] { transition: opacity 0.18s ease; }
+[data-item][aria-busy="true"] { opacity: 0.6; }
+[data-item].is-removing { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { [data-item] { transition: none; } }

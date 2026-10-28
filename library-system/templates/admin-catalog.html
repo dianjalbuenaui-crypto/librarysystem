@@ -1,4 +1,5 @@
 {% extends '_app_layout.html' %}
+{% from '_items.html' import admin_book %}
 {% from '_macros.html' import icon, sort_select %}
 {% block title %}Book catalog{% endblock %}
 {% block content %}
@@ -11,11 +12,11 @@
 
 <section class="card">
   <div class="card-head"><h2>Add a book</h2></div>
-  <form method="post" action="{{ url_for('add_book') }}" class="form-row">
+  <form method="post" action="{{ url_for('add_book') }}" class="form-row" data-async data-add-to="books">
     <div class="form-group grow"><label for="title">Title</label><input type="text" id="title" name="title" required></div>
     <div class="form-group grow"><label for="author">Author</label><input type="text" id="author" name="author" required></div>
     <div class="form-group narrow"><label for="copies">Copies</label><input type="number" id="copies" name="copies" min="1" value="1" inputmode="numeric" required></div>
-    <button type="submit" class="btn">{{ icon('plus') }}Add book</button>
+    <button type="submit" class="btn" data-busy="Adding…">{{ icon('plus') }}Add book</button>
   </form>
 </section>
 
@@ -29,40 +30,9 @@
 
 <section class="book-grid" id="books" data-list data-noun-one="book" data-noun-many="books" aria-label="Books">
   {% for b in books %}
-  <article class="book" data-item data-search="{{ b.search }}" data-title="{{ b.title }}" data-author="{{ b.author }}" data-copies="{{ b.copies }}"{% if not b.visible %} hidden{% endif %}>
-    <div class="book-cover cover-{{ loop.index0 % 4 }}" aria-hidden="true">
-      <span class="cover-letter">{{ b.title[:1]|upper }}</span>
-      <span class="cover-author">{{ b.author }}</span>
-    </div>
-    <div class="book-body">
-      <h3>{{ b.title }}</h3>
-      <p class="muted">{{ b.author }}</p>
-      <p class="book-copies"><strong>{{ b.copies }}</strong> cop{{ 'y' if b.copies == 1 else 'ies' }} available</p>
-    </div>
-    <div class="book-actions">
-      <details class="book-edit">
-        <summary class="btn btn-outline btn-small">Edit</summary>
-        <form method="post" action="{{ url_for('update_book', book_id=b.id) }}">
-          <label class="sr-only" for="t{{ b.id }}">Title</label>
-          <input type="text" id="t{{ b.id }}" name="title" value="{{ b.title }}" required>
-          <label class="sr-only" for="a{{ b.id }}">Author</label>
-          <input type="text" id="a{{ b.id }}" name="author" value="{{ b.author }}" required>
-          <label class="sr-only" for="c{{ b.id }}">Copies</label>
-          <input type="number" id="c{{ b.id }}" name="copies" value="{{ b.copies }}" min="0" inputmode="numeric" required>
-          <button type="submit" class="btn btn-small btn-full">Save</button>
-        </form>
-      </details>
-      <form method="post" action="{{ url_for('delete_book', book_id=b.id) }}"
-            data-confirm="Delete this book?"
-            data-confirm-body="“{{ b.title }}” and its borrow history will be removed. This can't be undone."
-            data-confirm-ok="Delete book">
-        <button type="submit" class="btn btn-outline btn-small btn-danger">Delete</button>
-      </form>
-    </div>
-  </article>
-  {% else %}
-  <p class="empty">No books in the catalog yet.</p>
+  {{ admin_book(b, b.id % 4) }}
   {% endfor %}
+  <p class="empty" data-list-placeholder{% if books %} hidden{% endif %}>No books in the catalog yet.</p>
 </section>
 <p class="empty" data-list-empty="books"{% if not books or books|selectattr('visible')|list %} hidden{% endif %}>No books match your search. Try fewer words or check the spelling.</p>
 {% endblock %}

@@ -1,4 +1,5 @@
 {% extends '_app_layout.html' %}
+{% from '_items.html' import loan_row, pending_row %}
 {% from '_macros.html' import badge, icon, sort_select, status_rank %}
 {% block title %}Requests and returns{% endblock %}
 {% block content %}
@@ -17,7 +18,7 @@
 
 <section class="card">
   <div class="card-head">
-    <h2>Borrow requests {% if pending %}<span class="count">{{ pending|length }}</span>{% endif %}</h2>
+    <h2>Borrow requests <span class="count" data-list-total="pending-list"{% if not pending %} hidden{% endif %}>{{ pending|length }}</span></h2>
     {{ sort_select('pending-sort', 'pending_sort', 'pending-list', 'Sort borrow requests', [
       ('requested:asc:date', 'Oldest first'),
       ('requested:desc:date', 'Newest first'),
@@ -34,18 +35,9 @@
     </tr></thead>
     <tbody>
       {% for r in pending %}
-      <tr data-item data-search="{{ r.search }}" data-student="{{ r.student }}" data-title="{{ r.title }}" data-requested="{{ r.requested_at or '' }}"{% if not r.visible %} hidden{% endif %}>
-        <td data-label="Student" class="cell-title">{{ r.student }}</td>
-        <td data-label="Book">{{ r.title }}</td>
-        <td data-label="Requested on">{{ r.requested_at|fmt }}</td>
-        <td class="cell-actions">
-          <form method="post" action="{{ url_for('request_action', rid=r.id, action='approve') }}" class="inline"><button type="submit" class="btn btn-small">Approve</button></form>
-          <form method="post" action="{{ url_for('request_action', rid=r.id, action='decline') }}" class="inline"><button type="submit" class="btn btn-outline btn-small">Decline</button></form>
-        </td>
-      </tr>
-      {% else %}
-      <tr class="empty-row"><td colspan="4">No pending requests.</td></tr>
+      {{ pending_row(r) }}
       {% endfor %}
+      <tr class="empty-row" data-list-placeholder{% if pending %} hidden{% endif %}><td colspan="4">No pending requests.</td></tr>
     </tbody>
   </table></div>
   <p class="empty" data-list-empty="pending-list"{% if not pending or pending|selectattr('visible')|list %} hidden{% endif %}>No requests match your search.</p>
@@ -53,7 +45,7 @@
 
 <section class="card">
   <div class="card-head">
-    <h2>Books out on loan {% if loans %}<span class="count">{{ loans|length }}</span>{% endif %}</h2>
+    <h2>Books out on loan <span class="count" data-list-total="loans-list"{% if not loans %} hidden{% endif %}>{{ loans|length }}</span></h2>
     {{ sort_select('loans-sort', 'loans_sort', 'loans-list', 'Sort books on loan', [
       ('due:asc:date', 'Due soonest'),
       ('due:desc:date', 'Due latest'),
@@ -72,19 +64,9 @@
     </tr></thead>
     <tbody>
       {% for l in loans %}
-      <tr data-item data-search="{{ l.search }}" data-student="{{ l.student }}" data-title="{{ l.title }}" data-due="{{ l.due_date or '' }}"
-          data-status="{{ status_rank(l.status, l.due_date, today) }}"{% if not l.visible %} hidden{% endif %}>
-        <td data-label="Student" class="cell-title">{{ l.student }}</td>
-        <td data-label="Book">{{ l.title }}</td>
-        <td data-label="Due date">{{ l.due_date|fmt }}</td>
-        <td data-label="Status">{{ badge(l.status, l.due_date, today) }}</td>
-        <td class="cell-actions">
-          <form method="post" action="{{ url_for('request_action', rid=l.id, action='return') }}" class="inline"><button type="submit" class="btn btn-small">Mark as returned</button></form>
-        </td>
-      </tr>
-      {% else %}
-      <tr class="empty-row"><td colspan="5">No books are out on loan.</td></tr>
+      {{ loan_row(l, today) }}
       {% endfor %}
+      <tr class="empty-row" data-list-placeholder{% if loans %} hidden{% endif %}><td colspan="5">No books are out on loan.</td></tr>
     </tbody>
   </table></div>
   <p class="empty" data-list-empty="loans-list"{% if not loans or loans|selectattr('visible')|list %} hidden{% endif %}>No loans match your search.</p>
