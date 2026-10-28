@@ -64,7 +64,7 @@
 {%- endmacro %}
 
 {% macro pending_row(r) -%}
-<tr data-item data-search="{{ r.search }}" data-student="{{ r.student }}" data-title="{{ r.title }}" data-requested="{{ r.requested_at or '' }}"{% if not r.visible %} hidden{% endif %}>
+<tr data-item data-id="{{ r.id }}" data-search="{{ r.search }}" data-student="{{ r.student }}" data-title="{{ r.title }}" data-requested="{{ r.requested_at or '' }}"{% if not r.visible %} hidden{% endif %}>
   <td data-label="Student" class="cell-title">{{ r.student }}</td>
   <td data-label="Book">{{ r.title }}</td>
   <td data-label="Requested on">{{ r.requested_at|fmt }}</td>

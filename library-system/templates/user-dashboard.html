@@ -18,7 +18,7 @@
     <h1>My dashboard</h1>
     <p class="muted">Welcome back, {{ session['name'] }}</p>
   </div>
-  <a class="btn btn-soft" href="{{ url_for('user_catalog') }}">{{ icon('search') }}Browse books</a>
+  <a class="btn btn-soft" href="{{ url_for('user_catalog') }}" data-skeleton="catalog">{{ icon('search') }}Browse books</a>
 </div>
 
 <section class="stats" aria-label="Your borrowing">
@@ -60,7 +60,7 @@
         <td data-label="Status">{{ badge(h.status, h.due_date, today) }}</td>
       </tr>
       {% else %}
-      <tr class="empty-row"><td colspan="5">You have not borrowed any books yet. <a href="{{ url_for('user_catalog') }}">Browse the catalog</a></td></tr>
+      <tr class="empty-row"><td colspan="5">You have not borrowed any books yet. <a href="{{ url_for('user_catalog') }}" data-skeleton="catalog">Browse the catalog</a></td></tr>
       {% endfor %}
     </tbody>
   </table></div>

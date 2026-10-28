@@ -159,6 +159,16 @@ def admin_requests():
                            loans=loans.on_loan(q), q=q, today=date.today())
 
 
+@app.route("/admin/live")
+@login_required("admin")
+def admin_live():
+    """Pending requests, polled by admin pages so new ones show up without a reload."""
+    pending = loans.pending()
+    return jsonify(count=len(pending),
+                   pending=[{"id": r["id"], "student": r["student"], "title": r["title"],
+                             "html": partial("pending_row", r)} for r in pending])
+
+
 @app.route("/admin/requests/<int:rid>/<action>", methods=["POST"])
 @login_required("admin")
 def request_action(rid, action):

@@ -7,7 +7,7 @@
     <h1>Dashboard</h1>
     <p class="muted">Signed in as {{ session['name'] }}</p>
   </div>
-  <a class="btn btn-soft" href="{{ url_for('admin_requests') }}">{{ icon('inbox') }}Review requests</a>
+  <a class="btn btn-soft" href="{{ url_for('admin_requests') }}" data-skeleton="requests">{{ icon('inbox') }}Review requests</a>
 </div>
 
 <section class="stats" aria-label="At a glance">
@@ -23,8 +23,8 @@
   </div>
   <div class="stat stat-accent">
     <span class="stat-label">Waiting for approval</span>
-    <span class="stat-number">{{ waiting }}</span>
-    <span class="stat-hint">{{ 'Requests to review' if waiting else 'All caught up' }}</span>
+    <span class="stat-number" data-live-count>{{ waiting }}</span>
+    <span class="stat-hint" data-live-hint>{{ 'Requests to review' if waiting else 'All caught up' }}</span>
   </div>
   <div class="stat">
     <span class="stat-label">Returned this month</span>

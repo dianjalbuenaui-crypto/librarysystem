@@ -110,7 +110,10 @@
       }
       throw new Error('Unexpected response ' + res.status);
     }).then(function (data) {
-      if (data) apply(form, data);
+      if (data) {
+        apply(form, data);
+        document.dispatchEvent(new CustomEvent('app:saved'));
+      }
     }).catch(function () {
       toast({ title: 'Couldn’t save', body: 'Check your connection, then refresh the page and try again.' }, true);
     }).then(function () {

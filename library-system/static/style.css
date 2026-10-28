@@ -515,3 +515,59 @@ th[aria-sort="descending"] .sort-arrow::after { content: "\2193"; opacity: 1; co
 [data-item][aria-busy="true"] { opacity: 0.6; }
 [data-item].is-removing { opacity: 0; }
 @media (prefers-reduced-motion: reduce) { [data-item] { transition: none; } }
+
+/* Live request count on the Requests nav item */
+.nav-badge {
+  min-width: 22px; height: 22px; padding: 0 7px;
+  display: inline-grid; place-items: center;
+  margin-left: auto;
+  border-radius: 99px;
+  background: var(--panel-active-bg); color: var(--panel-active-ink);
+  font-size: 12.5px; font-weight: 700; line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.side-nav a.active .nav-badge,
+.tabbar a.active .nav-badge { background: var(--panel-active-ink); color: var(--panel-active-bg); }
+.tabbar a { position: relative; }
+.tabbar .nav-badge { position: absolute; top: 3px; left: calc(50% + 8px); min-width: 19px; height: 19px; padding: 0 5px; font-size: 11.5px; }
+
+/* Rows that just arrived from another user */
+.table tbody tr.is-new td { animation: row-new 2.5s ease-out; }
+@keyframes row-new { from { background: color-mix(in srgb, var(--accent) 22%, transparent); } }
+
+/* Loading skeleton shown while the next page loads */
+.main.is-loading > :not(.skeleton-page) { display: none !important; }
+.skeleton-page .card,
+.skeleton-page .stat,
+.skeleton-page .book { pointer-events: none; }
+.skeleton-page .book:hover { transform: none; box-shadow: none; }
+.bone {
+  display: block;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--chip) 0%, color-mix(in srgb, var(--chip) 45%, var(--card)) 45%, var(--chip) 90%);
+  background-size: 220% 100%;
+  animation: bone-shimmer 1.3s ease-in-out infinite;
+}
+.bone-title { width: min(280px, 70%); height: 34px; margin-bottom: 10px; border-radius: 12px; }
+.bone-line { height: 14px; max-width: 100%; }
+.bone-heading { height: 19px; }
+.bone-number { width: 70px; height: 40px; border-radius: 12px; }
+.bone-field { height: 46px; border-radius: 14px; }
+.bone-button { width: 120px; height: 46px; border-radius: 14px; flex: none; }
+.bone-pill { width: 96px; height: 34px; border-radius: 99px; flex: none; }
+.bone-cover { aspect-ratio: 4 / 3; border-radius: 14px; }
+.book-body .bone + .bone { margin-top: 8px; }
+.bone-block { height: 200px; border-radius: 14px; }
+.bone-row { display: flex; align-items: center; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.bone-row:last-child { border-bottom: 0; }
+.bone-row .bone-pill { margin-left: auto; }
+.stat .bone-line { height: 16px; }
+@keyframes bone-shimmer { from { background-position: 100% 0; } to { background-position: -120% 0; } }
+@media (max-width: 719px) {
+  .bone-row { flex-wrap: wrap; gap: 10px; }
+  .bone-row .bone-line { width: 45% !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bone { animation: none; }
+  .table tbody tr.is-new td { animation: none; }
+}

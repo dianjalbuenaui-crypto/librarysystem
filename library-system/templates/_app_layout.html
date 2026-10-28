@@ -13,6 +13,10 @@
   ] -%}
   {%- set role_name = 'Borrower' -%}
 {%- endif -%}
+{%- set skeletons = {
+  'admin_dashboard': 'dashboard', 'admin_catalog': 'catalog-admin', 'admin_requests': 'requests',
+  'user_dashboard': 'history', 'user_catalog': 'catalog',
+} -%}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -27,7 +31,7 @@
       <span class="brand"><span class="brand-dot" aria-hidden="true"></span>Library System</span>
       <nav class="side-nav" aria-label="Main">
         {% for endpoint, label, short, ic in nav %}
-        <a href="{{ url_for(endpoint) }}"{% if request.endpoint == endpoint %} class="active" aria-current="page"{% endif %}>{{ icon(ic) }}{{ label }}</a>
+        <a href="{{ url_for(endpoint) }}" data-skeleton="{{ skeletons[endpoint] }}"{% if request.endpoint == endpoint %} class="active" aria-current="page"{% endif %}>{{ icon(ic) }}{{ label }}{% if endpoint == 'admin_requests' %}<span class="nav-badge" data-live-badge hidden></span>{% endif %}</a>
         {% endfor %}
       </nav>
       <div class="side-foot">
@@ -58,7 +62,7 @@
 
     <nav class="tabbar" aria-label="Main">
       {% for endpoint, label, short, ic in nav %}
-      <a href="{{ url_for(endpoint) }}"{% if request.endpoint == endpoint %} class="active" aria-current="page"{% endif %}>{{ icon(ic) }}<span>{{ short }}</span></a>
+      <a href="{{ url_for(endpoint) }}" data-skeleton="{{ skeletons[endpoint] }}"{% if request.endpoint == endpoint %} class="active" aria-current="page"{% endif %}>{{ icon(ic) }}<span>{{ short }}</span>{% if endpoint == 'admin_requests' %}<span class="nav-badge" data-live-badge hidden></span>{% endif %}</a>
       {% endfor %}
     </nav>
   </div>
@@ -94,5 +98,7 @@
   <script src="{{ url_for('static', filename='notify.js') }}" defer></script>
   <script src="{{ url_for('static', filename='list.js') }}" defer></script>
   <script src="{{ url_for('static', filename='actions.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='loading.js') }}" defer></script>
+  {% if session.get('role') == 'admin' %}<script src="{{ url_for('static', filename='live.js') }}" data-url="{{ url_for('admin_live') }}" defer></script>{% endif %}
 </body>
 </html>
