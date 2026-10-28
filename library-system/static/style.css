@@ -577,3 +577,7 @@ th[aria-sort="descending"] .sort-arrow::after { content: "\2193"; opacity: 1; co
 .book.is-new { animation: card-new 2.5s ease-out; }
 @keyframes card-new { from { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 45%, transparent); } }
 @media (prefers-reduced-motion: reduce) { .book.is-new { animation: none; } }
+
+/* The logo doubles as a link home */
+a.brand { color: inherit; border-radius: 10px; }
+a.brand:hover { opacity: 0.8; }

@@ -54,21 +54,19 @@
               <div class="float field">
                 <input type="text" id="student_id" name="student_id" value="{{ request.form.get('student_id', '') }}" placeholder=" " required
                        inputmode="numeric" autocomplete="off" maxlength="11" pattern="[0-9]{4}-[0-9]{6}"
-                       title="10 digits, like 2526-125232" aria-describedby="id-hint" data-id-format>
+                       title="10 digits, like 2526-125232" data-id-format>
                 <label for="student_id">Student or staff ID</label>
                 <span class="state" aria-hidden="true"></span>
               </div>
-              <small class="field-hint" id="id-hint">10 digits, like 2526-125232</small>
             </div>
           </div>
           <div class="form-group">
             <div class="float field">
               <input type="email" id="email" name="email" value="{{ request.form.get('email', '') }}" placeholder=" " autocomplete="email" required
-                     data-email-check="{{ url_for('email_status') }}" data-login-url="{{ url_for('login') }}" aria-describedby="email-hint email-msg">
+                     data-email-check="{{ url_for('email_status') }}" data-login-url="{{ url_for('login') }}" aria-describedby="email-msg">
               <label for="email">PHINMA Education email</label>
               <span class="state" aria-hidden="true"></span>
             </div>
-            <small class="field-hint" id="email-hint">Use your school email ending in {{ allowed_text }}, like yourname@{{ email_domain }}.</small>
             <p class="field-msg" id="email-msg" aria-live="polite"></p>
           </div>
           <div class="field-row">
@@ -76,7 +74,7 @@
               <div class="float field">
                 <input type="password" id="password" name="password" placeholder=" " autocomplete="new-password"
                        pattern="{{ policy.html_pattern }}" minlength="{{ policy.min_length }}" maxlength="{{ policy.max_length }}"
-                       title="{{ policy.hint }}" aria-describedby="pw-hint" required>
+                       title="{{ policy.hint }}" required>
                 <label for="password">Password</label>
                 <span class="state" aria-hidden="true"></span>
               </div>
@@ -89,7 +87,6 @@
               </div>
             </div>
           </div>
-          <small class="hint" id="pw-hint">{{ policy.hint }}</small>
           <button type="submit" class="btn btn-full btn-pill btn-primary">Create account</button>
         </form>
         <div class="auth-split" role="presentation"></div>
