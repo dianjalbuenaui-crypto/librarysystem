@@ -1,0 +1,49 @@
+{% macro icon(name) -%}
+<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+  {%- if name == 'grid' %}<rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/>
+  {%- elif name == 'book' %}<path d="M5 4.5h10.5a2 2 0 0 1 2 2V20H7a2 2 0 0 1-2-2z"/><path d="M5 18a2 2 0 0 1 2-2h10.5"/><path d="M9 8h5"/>
+  {%- elif name == 'inbox' %}<path d="M4 13.5l2.4-7.2A2 2 0 0 1 8.3 5h7.4a2 2 0 0 1 1.9 1.3l2.4 7.2V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M4 13.5h4.5l1.5 2.5h4l1.5-2.5H20"/>
+  {%- elif name == 'home' %}<path d="M4 10.5L12 4l8 6.5V19a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z"/>
+  {%- elif name == 'search' %}<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/>
+  {%- elif name == 'logout' %}<path d="M14 4.5h3.5a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H14"/><path d="M10 16l-4-4 4-4"/><path d="M6 12h9"/>
+  {%- elif name == 'plus' %}<path d="M12 5v14M5 12h14"/>
+  {%- elif name == 'back' %}<path d="M15 5l-7 7 7 7"/>
+  {%- elif name == 'check' %}<path d="M5 12.5l4.5 4.5L19 7.5"/>
+  {%- elif name == 'alert' %}<path d="M12 7.5v6"/><path d="M12 17h.01"/>
+  {%- elif name == 'close' %}<path d="M6 6l12 12M18 6L6 18"/>
+  {%- elif name == 'trash' %}<path d="M4.5 7h15"/><path d="M9.5 7V5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2"/><path d="M6.5 7l1 12a1.5 1.5 0 0 0 1.5 1.4h6a1.5 1.5 0 0 0 1.5-1.4l1-12"/><path d="M10 11v5.5M14 11v5.5"/>
+  {%- endif -%}
+</svg>
+{%- endmacro %}
+
+{% macro theme_toggle(extra='') -%}
+<button type="button" class="theme-toggle {{ extra }}" data-theme-toggle aria-label="Switch theme">
+  <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a6.8 6.8 0 0 0 10.7 10.7z"/></svg>
+  <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>
+</button>
+{%- endmacro %}
+
+{% macro badge(status, due, today) -%}
+  {%- if status == 'approved' -%}
+    {%- if due and due < today %}<span class="badge badge-overdue">Overdue</span>
+    {%- elif due == today %}<span class="badge badge-due">Due today</span>
+    {%- else %}<span class="badge badge-borrowed">Borrowed</span>{% endif -%}
+  {%- elif status == 'pending' %}<span class="badge badge-pending">Pending</span>
+  {%- else %}<span class="badge badge-done">{{ status|capitalize }}</span>{% endif -%}
+{%- endmacro %}
+
+{% macro status_rank(status, due, today) -%}
+  {%- if status == 'approved' -%}{{ 0 if due and due < today else 1 if due == today else 2 }}
+  {%- elif status == 'pending' -%}3
+  {%- elif status == 'returned' -%}4
+  {%- else -%}5{%- endif -%}
+{%- endmacro %}
+
+{% macro sort_select(id, name, target, label, options, current) -%}
+<label class="sr-only" for="{{ id }}">{{ label }}</label>
+<select id="{{ id }}" name="{{ name }}" class="sort-select" data-sort-for="{{ target }}">
+  {%- for value, text in options %}
+  <option value="{{ value }}"{{ ' selected' if value == current }}>{{ text }}</option>
+  {%- endfor %}
+</select>
+{%- endmacro %}

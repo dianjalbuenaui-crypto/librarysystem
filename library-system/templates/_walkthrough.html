@@ -1,0 +1,72 @@
+{%- set on_admin = role == 'admin' -%}
+  <div class="wt" data-walkthrough>
+    <div class="wt-stage" aria-hidden="true">
+      <div class="wt-pill wt-pink" data-role="user" data-pos="{{ 'prev' if on_admin else 'current' }}">
+        <svg viewBox="0 0 200 320" preserveAspectRatio="xMidYMid slice">
+          <path d="M56 50l4 10 10 4-10 4-4 10-4-10-10-4 10-4z" fill="#F8F4EC" stroke="#43334C" stroke-width="2.5" stroke-linejoin="round"/>
+          <circle cx="150" cy="58" r="5" fill="#E83C91" stroke="#43334C" stroke-width="2.5"/>
+          <g stroke="#43334C" stroke-width="3" stroke-linejoin="round">
+            <rect x="34" y="92" width="18" height="58" rx="3" fill="#F8F4EC"/>
+            <rect x="52" y="102" width="16" height="48" rx="3" fill="#E83C91"/>
+            <rect x="68" y="84" width="22" height="66" rx="3" fill="#43334C"/>
+            <rect x="90" y="98" width="14" height="52" rx="3" fill="#F8F4EC"/>
+            <path d="M106 150h16l20-53-16-4z" fill="#E83C91"/>
+            <rect x="144" y="90" width="18" height="60" rx="3" fill="#43334C"/>
+            <rect x="162" y="104" width="14" height="46" rx="3" fill="#F8F4EC"/>
+            <rect x="22" y="150" width="156" height="8" rx="3" fill="#43334C"/>
+            <rect x="34" y="176" width="20" height="60" rx="3" fill="#43334C"/>
+            <rect x="54" y="186" width="16" height="50" rx="3" fill="#F8F4EC"/>
+            <rect x="70" y="180" width="18" height="56" rx="3" fill="#E83C91"/>
+            <rect x="88" y="192" width="16" height="44" rx="3" fill="#F8F4EC"/>
+            <rect x="104" y="174" width="22" height="62" rx="3" fill="#43334C"/>
+            <rect x="126" y="184" width="16" height="52" rx="3" fill="#E83C91"/>
+            <rect x="142" y="178" width="18" height="58" rx="3" fill="#F8F4EC"/>
+            <rect x="160" y="190" width="16" height="46" rx="3" fill="#43334C"/>
+            <rect x="22" y="236" width="156" height="8" rx="3" fill="#43334C"/>
+          </g>
+          <path d="M73 96h12M73 104h12M149 100h8M39 188h10M109 186h12" stroke="#FF8FB7" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="118" cy="132" r="30" fill="#F8F4EC" fill-opacity=".6" stroke="#43334C" stroke-width="6"/>
+          <path d="M102 122a18 18 0 0 1 14-10" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+          <path d="M140 154l26 26" stroke="#43334C" stroke-width="11" stroke-linecap="round"/>
+        </svg>
+      </div>
+
+      <div class="wt-pill wt-magenta" data-role="admin" data-pos="{{ 'current' if on_admin else 'next' }}">
+        <svg viewBox="0 0 200 320" preserveAspectRatio="xMidYMid slice">
+          <path d="M160 40l4 10 10 4-10 4-4 10-4-10-10-4 10-4z" fill="#F8F4EC" stroke="#43334C" stroke-width="2.5" stroke-linejoin="round"/>
+          <circle cx="36" cy="66" r="5" fill="#FF8FB7" stroke="#43334C" stroke-width="2.5"/>
+          <g stroke="#43334C" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+            <rect x="40" y="74" width="112" height="176" rx="14" fill="#F8F4EC"/>
+            <rect x="70" y="62" width="52" height="24" rx="8" fill="#43334C"/>
+            <rect x="56" y="108" width="20" height="20" rx="5" fill="#FF8FB7"/>
+            <path d="M86 112h48M86 123h28"/>
+            <rect x="56" y="146" width="20" height="20" rx="5" fill="#FF8FB7"/>
+            <path d="M86 150h48M86 161h22"/>
+            <rect x="56" y="184" width="20" height="20" rx="5" fill="#FFFFFF"/>
+            <path d="M86 188h48M86 199h32"/>
+            <rect x="104" y="214" width="62" height="16" rx="3" fill="#F8F4EC"/>
+            <rect x="114" y="230" width="58" height="16" rx="3" fill="#43334C"/>
+            <rect x="102" y="246" width="68" height="16" rx="3" fill="#FF8FB7"/>
+          </g>
+          <path d="M60 118l4 4 8-9M60 156l4 4 8-9" fill="none" stroke="#43334C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M122 238h12" stroke="#FF8FB7" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="wt-captions" aria-live="polite">
+      <div class="wt-caption{{ '' if on_admin else ' is-current' }}" data-role="user">
+        <h2>For borrowers</h2>
+        <p>Browse the catalog, request a book, and pick it up once a librarian approves it.</p>
+      </div>
+      <div class="wt-caption{{ ' is-current' if on_admin else '' }}" data-role="admin">
+        <h2>For admins</h2>
+        <p>Keep the catalog up to date, approve borrow requests, and check books back in.</p>
+      </div>
+    </div>
+
+    <div class="wt-dots">
+      <button type="button" class="wt-dot" data-role="user" aria-current="{{ 'false' if on_admin else 'true' }}" aria-label="Borrower"></button>
+      <button type="button" class="wt-dot" data-role="admin" aria-current="{{ 'true' if on_admin else 'false' }}" aria-label="Admin"></button>
+    </div>
+  </div>

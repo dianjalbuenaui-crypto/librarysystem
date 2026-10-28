@@ -1,0 +1,105 @@
+{% from '_macros.html' import icon, theme_toggle %}
+{% set flashes = get_flashed_messages() %}
+{% set role = 'admin' if (request.form.get('role') or request.args.get('role')) == 'admin' else 'user' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {% include '_head.html' %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+  <title>Sign up - Library System</title>
+</head>
+<body class="auth-page">
+  {{ theme_toggle('auth-toggle') }}
+
+  <div class="auth-shell">
+    <aside class="auth-art" aria-label="Choose who you are">
+      <a class="art-logo" href="{{ url_for('index', role=role) }}" data-role-link aria-label="Library System home">
+        <span class="brand-mark" aria-hidden="true"></span>
+      </a>
+      <p class="art-headline">Borrow books <span>the easy way.</span></p>
+      {% include '_walkthrough.html' %}
+    </aside>
+
+    <main class="auth-form-side">
+      <div class="auth-box">
+        <a class="mobile-logo" href="{{ url_for('index', role=role) }}" data-role-link aria-label="Library System home">
+          <span class="brand-mark" aria-hidden="true"></span>
+        </a>
+        <h1>Create your account</h1>
+        <p class="muted">It only takes a minute. Use your PHINMA Education email.</p>
+        {% for m in flashes %}<p class="flash" role="alert">{{ m }}</p>{% endfor %}
+        <form method="post" action="{{ url_for('signup') }}">
+          <span class="caption" id="role-caption">Register as</span>
+          <div class="seg-group" role="radiogroup" aria-labelledby="role-caption">
+            <input type="radio" id="role-user" name="role" value="user"{{ ' checked' if role == 'user' }}>
+            <label for="role-user">Borrower</label>
+            <input type="radio" id="role-admin" name="role" value="admin"{{ ' checked' if role == 'admin' }}>
+            <label for="role-admin">Admin</label>
+          </div>
+          <div class="form-group admin-only">
+            <div class="float">
+              <input type="password" id="admin_code" name="admin_code" placeholder=" ">
+              <label for="admin_code">Admin access code</label>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="form-group">
+              <div class="float field">
+                <input type="text" id="fullname" name="fullname" value="{{ request.form.get('fullname', '') }}" placeholder=" " autocomplete="name" required>
+                <label for="fullname">Full name</label>
+                <span class="state" aria-hidden="true"></span>
+              </div>
+            </div>
+            <div class="form-group">
+              <div class="float field">
+                <input type="text" id="student_id" name="student_id" value="{{ request.form.get('student_id', '') }}" placeholder=" " required
+                       inputmode="numeric" autocomplete="off" maxlength="11" pattern="[0-9]{4}-[0-9]{6}"
+                       title="10 digits, like 2526-125232" aria-describedby="id-hint" data-id-format>
+                <label for="student_id">Student or staff ID</label>
+                <span class="state" aria-hidden="true"></span>
+              </div>
+              <small class="field-hint" id="id-hint">10 digits, like 2526-125232</small>
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="float field">
+              <input type="email" id="email" name="email" value="{{ request.form.get('email', '') }}" placeholder=" " autocomplete="email" required
+                     data-email-check="{{ url_for('email_status') }}" data-login-url="{{ url_for('login') }}" aria-describedby="email-hint email-msg">
+              <label for="email">PHINMA Education email</label>
+              <span class="state" aria-hidden="true"></span>
+            </div>
+            <small class="field-hint" id="email-hint">Use your school email ending in {{ allowed_text }}, like yourname@{{ email_domain }}.</small>
+            <p class="field-msg" id="email-msg" aria-live="polite"></p>
+          </div>
+          <div class="field-row">
+            <div class="form-group">
+              <div class="float field">
+                <input type="password" id="password" name="password" placeholder=" " autocomplete="new-password"
+                       pattern="{{ policy.html_pattern }}" minlength="{{ policy.min_length }}" maxlength="{{ policy.max_length }}"
+                       title="{{ policy.hint }}" aria-describedby="pw-hint" required>
+                <label for="password">Password</label>
+                <span class="state" aria-hidden="true"></span>
+              </div>
+            </div>
+            <div class="form-group">
+              <div class="float field">
+                <input type="password" id="confirm" name="confirm" placeholder=" " autocomplete="new-password" minlength="{{ policy.min_length }}" required>
+                <label for="confirm">Confirm password</label>
+                <span class="state" aria-hidden="true"></span>
+              </div>
+            </div>
+          </div>
+          <small class="hint" id="pw-hint">{{ policy.hint }}</small>
+          <button type="submit" class="btn btn-full btn-pill btn-primary">Create account</button>
+        </form>
+        <div class="auth-split" role="presentation"></div>
+        <p class="auth-alt-text">Already have an account?</p>
+        <a class="btn btn-full btn-pill btn-outline-accent" href="{{ url_for('login', role=role) }}" data-role-link>Log in</a>
+        <p class="auth-brand"><span class="brand-dot" aria-hidden="true"></span>Library System</p>
+      </div>
+    </main>
+  </div>
+  <script src="{{ url_for('static', filename='theme.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='auth.js') }}" defer></script>
+</body>
+</html>

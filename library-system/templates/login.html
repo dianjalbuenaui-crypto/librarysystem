@@ -1,0 +1,64 @@
+{% from '_macros.html' import icon, theme_toggle %}
+{% set flashes = get_flashed_messages() %}
+{% set role = 'admin' if (request.form.get('role') or request.args.get('role')) == 'admin' else 'user' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {% include '_head.html' %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+  <title>Log in - Library System</title>
+</head>
+<body class="auth-page">
+  {{ theme_toggle('auth-toggle') }}
+
+  <div class="auth-shell">
+    <aside class="auth-art" aria-label="Choose who you are">
+      <a class="art-logo" href="{{ url_for('index', role=role) }}" data-role-link aria-label="Library System home">
+        <span class="brand-mark" aria-hidden="true"></span>
+      </a>
+      <p class="art-headline">Find your next <span>great read.</span></p>
+      {% include '_walkthrough.html' %}
+    </aside>
+
+    <main class="auth-form-side">
+      <div class="auth-box">
+        <a class="mobile-logo" href="{{ url_for('index', role=role) }}" data-role-link aria-label="Library System home">
+          <span class="brand-mark" aria-hidden="true"></span>
+        </a>
+        <h1>Log in to Library System</h1>
+        <p class="muted">Welcome back! Choose your role and sign in.</p>
+        {% for m in flashes %}<p class="flash" role="alert">{{ m }}</p>{% endfor %}
+        <form method="post" action="{{ url_for('login') }}">
+          <span class="caption" id="role-caption">Log in as</span>
+          <div class="seg-group" role="radiogroup" aria-labelledby="role-caption">
+            <input type="radio" id="role-user" name="role" value="user"{{ ' checked' if role == 'user' }}>
+            <label for="role-user">Borrower</label>
+            <input type="radio" id="role-admin" name="role" value="admin"{{ ' checked' if role == 'admin' }}>
+            <label for="role-admin">Admin</label>
+          </div>
+          <div class="form-group">
+            <div class="float field">
+              <input type="email" id="email" name="email" value="{{ request.form.get('email', '') }}" placeholder=" " autocomplete="email" required>
+              <label for="email">Email address</label>
+              <span class="state" aria-hidden="true"></span>
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="float">
+              <input type="password" id="password" name="password" placeholder=" " autocomplete="current-password" required>
+              <label for="password">Password</label>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-full btn-pill btn-primary">Log in</button>
+        </form>
+        <div class="auth-split" role="presentation"></div>
+        <p class="auth-alt-text">New to the library?</p>
+        <a class="btn btn-full btn-pill btn-outline-accent" href="{{ url_for('signup', role=role) }}" data-role-link>Create new account</a>
+        <p class="auth-brand"><span class="brand-dot" aria-hidden="true"></span>Library System</p>
+      </div>
+    </main>
+  </div>
+  <script src="{{ url_for('static', filename='theme.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='auth.js') }}" defer></script>
+</body>
+</html>

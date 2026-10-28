@@ -1,0 +1,97 @@
+{% from '_macros.html' import icon, theme_toggle %}
+{%- if session.get('role') == 'admin' -%}
+  {%- set nav = [
+    ('admin_dashboard', 'Dashboard', 'Home', 'grid'),
+    ('admin_catalog', 'Book catalog', 'Catalog', 'book'),
+    ('admin_requests', 'Requests and returns', 'Requests', 'inbox'),
+  ] -%}
+  {%- set role_name = 'Admin' -%}
+{%- else -%}
+  {%- set nav = [
+    ('user_dashboard', 'My dashboard', 'Home', 'home'),
+    ('user_catalog', 'Browse books', 'Browse', 'search'),
+  ] -%}
+  {%- set role_name = 'Borrower' -%}
+{%- endif -%}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {% include '_head.html' %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <title>{% block title %}{% endblock %} - Library System</title>
+</head>
+<body class="app-page">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="app">
+    <aside class="sidebar">
+      <span class="brand"><span class="brand-dot" aria-hidden="true"></span>Library System</span>
+      <nav class="side-nav" aria-label="Main">
+        {% for endpoint, label, short, ic in nav %}
+        <a href="{{ url_for(endpoint) }}"{% if request.endpoint == endpoint %} class="active" aria-current="page"{% endif %}>{{ icon(ic) }}{{ label }}</a>
+        {% endfor %}
+      </nav>
+      <div class="side-foot">
+        <div class="who">
+          <span class="who-initial" aria-hidden="true">{{ (session.get('name') or '?')[:1]|upper }}</span>
+          <span class="who-text"><strong>{{ session.get('name') }}</strong><small>{{ role_name }}</small></span>
+        </div>
+        <div class="side-actions">
+          {{ theme_toggle('on-panel') }}
+          <a class="side-logout" href="{{ url_for('logout') }}">{{ icon('logout') }}Log out</a>
+        </div>
+      </div>
+    </aside>
+
+    <header class="appbar">
+      <span class="brand"><span class="brand-dot" aria-hidden="true"></span>Library System</span>
+      <div class="appbar-actions">
+        {{ theme_toggle() }}
+        <a class="icon-btn" href="{{ url_for('logout') }}" aria-label="Log out" title="Log out">{{ icon('logout') }}</a>
+      </div>
+    </header>
+
+    {%- set flashes = get_flashed_messages(with_categories=true) %}
+    <main class="main" id="main">
+      {% for category, m in flashes if not category.startswith('toast') %}<p class="flash" role="status">{{ m }}</p>{% endfor %}
+      {% block content %}{% endblock %}
+    </main>
+
+    <nav class="tabbar" aria-label="Main">
+      {% for endpoint, label, short, ic in nav %}
+      <a href="{{ url_for(endpoint) }}"{% if request.endpoint == endpoint %} class="active" aria-current="page"{% endif %}>{{ icon(ic) }}<span>{{ short }}</span></a>
+      {% endfor %}
+    </nav>
+  </div>
+    <div class="toast-stack">
+    {% for category, m in flashes if category.startswith('toast') %}
+    {%- set is_error = category == 'toast-error' %}
+    <div class="toast {{ 'toast-error' if is_error else 'toast-success' }}" data-toast{% if is_error %} data-sticky{% endif %}>
+      <span class="toast-icon" aria-hidden="true">{{ icon('alert' if is_error else 'check') }}</span>
+      <div class="toast-text">
+        <strong>{{ m.title if m is mapping else ('Something went wrong' if is_error else 'Done') }}</strong>
+        <p>{{ m.body if m is mapping else m }}</p>
+      </div>
+      <button type="button" class="toast-close" data-toast-close aria-label="Dismiss notification">{{ icon('close') }}</button>
+      {% if not is_error %}<span class="toast-progress" aria-hidden="true"></span>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  <div class="sr-only" aria-live="polite" id="toast-live"></div>
+
+    <dialog class="modal" id="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-body">
+    <form method="dialog" class="modal-box">
+      <span class="modal-icon" aria-hidden="true">{{ icon('trash') }}</span>
+      <h2 id="confirm-title">Are you sure?</h2>
+      <p id="confirm-body"></p>
+      <div class="modal-actions">
+        <button type="submit" value="cancel" class="btn btn-outline" autofocus>Cancel</button>
+        <button type="submit" value="confirm" class="btn" id="confirm-ok">Delete</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="{{ url_for('static', filename='theme.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='notify.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='lists.js') }}" defer></script>
+</body>
+</html>

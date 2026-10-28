@@ -1,0 +1,60 @@
+{% extends '_app_layout.html' %}
+{% from '_macros.html' import icon, sort_select %}
+{% block title %}Browse books{% endblock %}
+{% block content %}
+{% if notices %}
+<section class="notice" role="alert">
+  <h2>Overdue book notice</h2>
+  <ul>
+    {% for n in notices %}
+    <li><strong>{{ n.title }}</strong> was due on {{ n.due_date|fmt }} and is {{ n.days_late }} day{{ '' if n.days_late == 1 else 's' }} late. Please return it to the library as soon as possible.</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+<div class="page-head">
+  <div>
+    <h1>Browse books</h1>
+    <p class="muted">Find a book and send a borrow request.</p>
+  </div>
+</div>
+
+<form method="get" class="toolbar toolbar-plain" role="search" data-live-form>
+  <label class="sr-only" for="catalog-q">Search by title or author</label>
+  <input type="search" id="catalog-q" name="q" value="{{ q }}" placeholder="Search by title or author" autocomplete="off" data-search-for="books">
+  {{ sort_select('catalog-sort', 'sort', 'books', 'Sort books', [('title:asc:text', 'Title A–Z'), ('title:desc:text', 'Title Z–A'), ('author:asc:text', 'Author A–Z'), ('author:desc:text', 'Author Z–A'), ('copies:desc:number', 'Most copies'), ('copies:asc:number', 'Fewest copies')], request.args.get('sort')) }}
+  <button type="submit" class="btn" data-live-submit>{{ icon('search') }}Search</button>
+</form>
+<p class="list-count" data-list-count="books" aria-live="polite"></p>
+
+<section class="book-grid" id="books" data-list data-noun-one="book" data-noun-many="books" aria-label="Books">
+  {% for b in books %}
+  <article class="book" data-item data-search="{{ b.search }}" data-title="{{ b.title }}" data-author="{{ b.author }}" data-copies="{{ b.copies }}"{% if not b.visible %} hidden{% endif %}>
+    <div class="book-cover cover-{{ loop.index0 % 4 }}" aria-hidden="true">
+      <span class="cover-letter">{{ b.title[:1]|upper }}</span>
+      <span class="cover-author">{{ b.author }}</span>
+    </div>
+    <div class="book-body">
+      <h3>{{ b.title }}</h3>
+      <p class="muted">{{ b.author }}</p>
+      <p class="book-copies"><strong>{{ b.copies }}</strong> cop{{ 'y' if b.copies == 1 else 'ies' }} available</p>
+    </div>
+    <div class="book-actions">
+      {% if b.id in requested %}
+        <button type="button" class="btn btn-outline btn-small btn-full" disabled>Requested</button>
+      {% elif b.copies < 1 %}
+        <button type="button" class="btn btn-outline btn-small btn-full" disabled>Unavailable</button>
+      {% else %}
+        <form method="post" action="{{ url_for('request_borrow', book_id=b.id) }}" class="btn-full">
+          <button type="submit" class="btn btn-small btn-full">Request borrow</button>
+        </form>
+      {% endif %}
+    </div>
+  </article>
+  {% else %}
+  <p class="empty">No books in the catalog yet.</p>
+  {% endfor %}
+</section>
+<p class="empty" data-list-empty="books"{% if not books or books|selectattr('visible')|list %} hidden{% endif %}>No books match your search. Try fewer words or check the spelling.</p>
+{% endblock %}

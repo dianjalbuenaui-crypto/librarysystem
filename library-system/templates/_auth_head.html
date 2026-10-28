@@ -1,0 +1,19 @@
+<meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <script>
+    /* Runs before paint so the saved theme and the phone step never flash.
+       On phones the role picker shows first, unless the page came back with a message. */
+    (function () {
+      var d = document.documentElement;
+      d.classList.add('js');
+      d.setAttribute('data-step', d.hasAttribute('data-flash') ? 'form' : 'pick');
+      try {
+        var t = localStorage.getItem('ls-theme');
+        if (t === 'light' || t === 'dark') d.setAttribute('data-theme', t);
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">

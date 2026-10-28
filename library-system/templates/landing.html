@@ -1,0 +1,54 @@
+{% from '_macros.html' import theme_toggle %}
+{% set role = 'admin' if (request.args.get('role') or session.get('role')) == 'admin' else 'user' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {% include '_head.html' %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+  <title>Library System</title>
+</head>
+<body class="auth-page landing-page">
+  {{ theme_toggle('auth-toggle') }}
+
+  <div class="auth-shell">
+    <aside class="auth-art" aria-label="Choose who you are">
+      <a class="art-logo" href="{{ url_for('index') }}" aria-label="Library System home">
+        <span class="brand-mark" aria-hidden="true"></span>
+      </a>
+      <p class="art-headline">Find your next <span>great read.</span></p>
+      {% include '_walkthrough.html' %}
+    </aside>
+
+    <main class="auth-form-side">
+      <div class="auth-box">
+        {% if home_url %}
+        <h1>Welcome back, {{ session.get('name') }}</h1>
+        <p class="muted">You’re still signed in as {{ 'an admin' if session.get('role') == 'admin' else 'a borrower' }}. Pick up where you left off, or log out to switch accounts.</p>
+        <a class="btn btn-full btn-pill btn-primary" href="{{ home_url }}">Go to my dashboard</a>
+        <div class="auth-split" role="presentation"></div>
+        <p class="auth-alt-text">Not you, or want to use another account?</p>
+        <a class="btn btn-full btn-pill btn-outline-accent" href="{{ url_for('logout') }}">Log out</a>
+        <p class="auth-brand"><span class="brand-dot" aria-hidden="true"></span>Library System</p>
+        {% else %}
+        <h1>Welcome to Library System</h1>
+        <p class="muted">Borrow books from your school library in a few taps. Swipe the cards or pick below to choose how you’ll use it.</p>
+        <span class="caption" id="role-caption">I am a</span>
+        <div class="seg-group" role="radiogroup" aria-labelledby="role-caption">
+          <input type="radio" id="role-user" name="role" value="user"{{ ' checked' if role == 'user' }}>
+          <label for="role-user">Borrower</label>
+          <input type="radio" id="role-admin" name="role" value="admin"{{ ' checked' if role == 'admin' }}>
+          <label for="role-admin">Admin</label>
+        </div>
+        <a class="btn btn-full btn-pill btn-primary" href="{{ url_for('login', role=role) }}" data-role-link data-role-text="Log in as {role}">Log in as {{ 'Admin' if role == 'admin' else 'Borrower' }}</a>
+        <div class="auth-split" role="presentation"></div>
+        <p class="auth-alt-text">New to the library?</p>
+        <a class="btn btn-full btn-pill btn-outline-accent" href="{{ url_for('signup', role=role) }}" data-role-link>Create new account</a>
+        <p class="auth-brand"><span class="brand-dot" aria-hidden="true"></span>Library System</p>
+        {% endif %}
+      </div>
+    </main>
+  </div>
+  <script src="{{ url_for('static', filename='theme.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='auth.js') }}" defer></script>
+</body>
+</html>
