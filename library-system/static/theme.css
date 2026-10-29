@@ -179,20 +179,17 @@ a { color: inherit; }
 
 .muted { color: var(--ink-soft); }
 
-.brand-mark { position: relative; width: 46px; height: 46px; margin: 0 auto 18px; }
-.brand-mark::before,
-.brand-mark::after {
-  content: "";
-  position: absolute;
-  width: 27px; height: 27px;
-  border: 3px solid var(--ink);
-  border-radius: 9px;
-}
-.brand-mark::before { left: 0; top: 0; }
-.brand-mark::after { right: 0; bottom: 0; background: var(--accent); }
+/* Book logo: colors follow the theme (rose + white in light, pink + plum in dark). */
+.logo { display: block; flex: none; }
+.logo-bg { fill: var(--btn-bg); }
+.logo-page { fill: var(--btn-ink); }
+.logo-cover { fill: none; stroke: var(--btn-ink); stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.logo-text { fill: none; stroke: var(--btn-bg); stroke-width: 1.4; stroke-linecap: round; }
+
+.brand-mark { width: 46px; height: 46px; margin: 0 auto 18px; }
 
 .brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 600; font-size: 16.5px; text-decoration: none; }
-.brand-dot { width: 22px; height: 22px; flex: none; border-radius: 7px; border: 2.5px solid currentColor; background: var(--magenta); }
+.brand-dot { width: 26px; height: 26px; }
 
 .btn {
   display: inline-flex;

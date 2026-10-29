@@ -1,4 +1,4 @@
-{% from '_macros.html' import icon, theme_toggle %}
+{% from '_macros.html' import icon, logo, theme_toggle %}
 {% set flashes = get_flashed_messages() %}
 {% set role = 'admin' if (request.form.get('role') or request.args.get('role')) == 'admin' else 'user' %}
 <!DOCTYPE html>
@@ -14,7 +14,7 @@
   <div class="auth-shell">
     <aside class="auth-art" aria-label="Choose who you are">
       <a class="art-logo" href="{{ url_for('index', role=role) }}" data-role-link aria-label="Library System home">
-        <span class="brand-mark" aria-hidden="true"></span>
+        {{ logo('brand-mark') }}
       </a>
       <p class="art-headline">Find your next <span>great read.</span></p>
       {% include '_walkthrough.html' %}
@@ -23,7 +23,7 @@
     <main class="auth-form-side">
       <div class="auth-box">
         <a class="mobile-logo" href="{{ url_for('index', role=role) }}" data-role-link aria-label="Library System home">
-          <span class="brand-mark" aria-hidden="true"></span>
+          {{ logo('brand-mark') }}
         </a>
         <h1>Log in to Library System</h1>
         <p class="muted">Welcome back! Choose your role and sign in.</p>
@@ -54,7 +54,7 @@
         <div class="auth-split" role="presentation"></div>
         <p class="auth-alt-text">New to the library?</p>
         <a class="btn btn-full btn-pill btn-outline-accent" href="{{ url_for('signup', role=role) }}" data-role-link>Create new account</a>
-        <p class="auth-brand"><span class="brand-dot" aria-hidden="true"></span>Library System</p>
+        <p class="auth-brand">{{ logo('brand-dot') }}Library System</p>
       </div>
     </main>
   </div>

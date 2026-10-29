@@ -3,7 +3,7 @@ from datetime import date
 
 from dotenv import load_dotenv
 from flask import (Flask, flash, get_template_attribute, jsonify, redirect, render_template, request,
-                   session, url_for)
+                   send_from_directory, session, url_for)
 
 from accounts import AccountService, home_for, login_required
 from database import BookRepository, Database, RequestRepository, UserRepository, to_date
@@ -64,6 +64,11 @@ def finish(notice, endpoint, **changes):
 def fmt(d):
     d = to_date(d)
     return d.strftime("%d/%m/%Y") if d else "-"
+
+
+@app.route("/favicon.ico")
+def favicon():
+    return send_from_directory(app.static_folder, "favicon.ico", mimetype="image/vnd.microsoft.icon")
 
 
 @app.route("/")

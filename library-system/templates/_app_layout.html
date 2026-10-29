@@ -1,4 +1,4 @@
-{% from '_macros.html' import icon, theme_toggle %}
+{% from '_macros.html' import icon, logo, theme_toggle %}
 {%- if session.get('role') == 'admin' -%}
   {%- set nav = [
     ('admin_dashboard', 'Dashboard', 'Home', 'grid'),
@@ -28,7 +28,7 @@
   <a class="skip-link" href="#main">Skip to content</a>
   <div class="app">
     <aside class="sidebar">
-      <a class="brand" href="{{ url_for(nav[0][0]) }}" data-skeleton="{{ skeletons[nav[0][0]] }}" aria-label="Library System home"><span class="brand-dot" aria-hidden="true"></span>Library System</a>
+      <a class="brand" href="{{ url_for(nav[0][0]) }}" data-skeleton="{{ skeletons[nav[0][0]] }}" aria-label="Library System home">{{ logo('brand-dot') }}Library System</a>
       <nav class="side-nav" aria-label="Main">
         {% for endpoint, label, short, ic in nav %}
         <a href="{{ url_for(endpoint) }}" data-skeleton="{{ skeletons[endpoint] }}"{% if request.endpoint == endpoint %} class="active" aria-current="page"{% endif %}>{{ icon(ic) }}{{ label }}{% if endpoint == 'admin_requests' %}{% set waiting = page.values.pending|length if page is defined and page.values.pending is defined else 0 %}<span class="nav-badge" data-live-badge aria-label="{{ waiting }} waiting"{% if not waiting %} hidden{% endif %}>{{ waiting }}</span>{% endif %}</a>
@@ -47,7 +47,7 @@
     </aside>
 
     <header class="appbar">
-      <a class="brand" href="{{ url_for(nav[0][0]) }}" data-skeleton="{{ skeletons[nav[0][0]] }}" aria-label="Library System home"><span class="brand-dot" aria-hidden="true"></span>Library System</a>
+      <a class="brand" href="{{ url_for(nav[0][0]) }}" data-skeleton="{{ skeletons[nav[0][0]] }}" aria-label="Library System home">{{ logo('brand-dot') }}Library System</a>
       <div class="appbar-actions">
         {{ theme_toggle() }}
         <a class="icon-btn" href="{{ url_for('logout') }}" aria-label="Log out" title="Log out">{{ icon('logout') }}</a>

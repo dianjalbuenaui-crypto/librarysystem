@@ -1,5 +1,11 @@
 <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" sizes="48x48">
+  <link rel="icon" type="image/svg+xml" id="site-icon"
+        href="{{ url_for('static', filename='favicon.svg') }}"
+        data-light="{{ url_for('static', filename='favicon.svg') }}"
+        data-dark="{{ url_for('static', filename='favicon-dark.svg') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
   <script>
     (function () {
       var d = document.documentElement;
@@ -8,6 +14,11 @@
         var t = localStorage.getItem('ls-theme');
         if (t === 'light' || t === 'dark') d.setAttribute('data-theme', t);
       } catch (e) {}
+      /* Tab icon matches the theme: saved choice first, otherwise the device setting. */
+      var theme = d.getAttribute('data-theme') ||
+        (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      var icon = document.getElementById('site-icon');
+      if (icon) icon.href = icon.getAttribute('data-' + theme);
     })();
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">

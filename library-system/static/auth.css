@@ -98,11 +98,9 @@ body.auth-page { background: var(--surface); }
   align-self: start;
   display: inline-flex;
   width: fit-content;
-  border-radius: 16px;
+  border-radius: 50%;
 }
 .art-logo .brand-mark { width: 60px; height: 60px; margin: 0; }
-.art-logo .brand-mark::before,
-.art-logo .brand-mark::after { width: 36px; height: 36px; border-width: 4px; border-radius: 12px; }
 
 .art-headline {
   grid-area: 2 / 1;
@@ -269,7 +267,7 @@ form:has(#role-admin:checked) .admin-only { display: block; }
   font-weight: 600;
   color: var(--ink-soft);
 }
-.auth-brand .brand-dot { width: 18px; height: 18px; border-radius: 6px; border-width: 2px; color: var(--ink); }
+.auth-brand .brand-dot { width: 22px; height: 22px; }
 
 @media (max-width: 1199px) {
   .auth-shell { grid-template-columns: minmax(0, 1.15fr) minmax(400px, 1fr); }
@@ -290,8 +288,6 @@ form:has(#role-admin:checked) .admin-only { display: block; }
   }
   .mobile-logo { display: flex; justify-content: center; margin: 4px 0 26px; }
   .mobile-logo .brand-mark { width: 56px; height: 56px; margin: 0; }
-  .mobile-logo .brand-mark::before,
-  .mobile-logo .brand-mark::after { width: 34px; height: 34px; border-width: 4px; border-radius: 11px; }
   .auth-box h1 { text-align: center; }
   .auth-box > .muted { text-align: center; }
   .auth-toggle { position: absolute; top: calc(16px + env(safe-area-inset-top, 0px)); right: 16px; }
@@ -313,8 +309,6 @@ form:has(#role-admin:checked) .admin-only { display: block; }
     padding: calc(20px + env(safe-area-inset-top, 0px)) 22px 4px;
   }
   .landing-page .art-logo .brand-mark { width: 52px; height: 52px; }
-  .landing-page .art-logo .brand-mark::before,
-  .landing-page .art-logo .brand-mark::after { width: 32px; height: 32px; }
   .landing-page .art-headline { grid-area: 2 / 1; align-self: start; font-size: clamp(34px, 8vw, 52px); }
   .landing-page .art-headline span { display: inline; }
   .landing-page .auth-art .wt { grid-area: 3 / 1; }

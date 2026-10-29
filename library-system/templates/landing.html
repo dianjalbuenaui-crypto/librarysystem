@@ -1,4 +1,4 @@
-{% from '_macros.html' import theme_toggle %}
+{% from '_macros.html' import logo, theme_toggle %}
 {% set role = 'admin' if (request.args.get('role') or session.get('role')) == 'admin' else 'user' %}
 <!DOCTYPE html>
 <html lang="en">
@@ -13,7 +13,7 @@
   <div class="auth-shell">
     <aside class="auth-art" aria-label="Choose who you are">
       <a class="art-logo" href="{{ url_for('index') }}" aria-label="Library System home">
-        <span class="brand-mark" aria-hidden="true"></span>
+        {{ logo('brand-mark') }}
       </a>
       <p class="art-headline">Find your next <span>great read.</span></p>
       {% include '_walkthrough.html' %}
@@ -28,7 +28,7 @@
         <div class="auth-split" role="presentation"></div>
         <p class="auth-alt-text">Not you, or want to use another account?</p>
         <a class="btn btn-full btn-pill btn-outline-accent" href="{{ url_for('logout') }}">Log out</a>
-        <p class="auth-brand"><span class="brand-dot" aria-hidden="true"></span>Library System</p>
+        <p class="auth-brand">{{ logo('brand-dot') }}Library System</p>
         {% else %}
         <h1>Welcome to Library System</h1>
         <p class="muted">Borrow books from your school library in a few taps. Swipe the cards or pick below to choose how you’ll use it.</p>
@@ -43,7 +43,7 @@
         <div class="auth-split" role="presentation"></div>
         <p class="auth-alt-text">New to the library?</p>
         <a class="btn btn-full btn-pill btn-outline-accent" href="{{ url_for('signup', role=role) }}" data-role-link>Create new account</a>
-        <p class="auth-brand"><span class="brand-dot" aria-hidden="true"></span>Library System</p>
+        <p class="auth-brand">{{ logo('brand-dot') }}Library System</p>
         {% endif %}
       </div>
     </main>
